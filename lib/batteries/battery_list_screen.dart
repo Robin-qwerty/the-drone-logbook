@@ -74,7 +74,7 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Batteries')),
+      appBar: AppBar(title: const Text('Your batteries')),
       body: _batteries.isEmpty
           ? const Center(child: Text('No batteries found.'))
           : ListView.builder(
@@ -96,10 +96,12 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _navigateToEditBattery(battery),
-                      ),
+                      if (battery['end_date'] == null ||
+                          battery['end_date'].isEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _navigateToEditBattery(battery),
+                        ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _deleteBattery(battery['id']),
@@ -132,21 +134,28 @@ class _BatteryEditScreenState extends State<BatteryEditScreen> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _numberController;
+  late TextEditingController _brandController;
+  late TextEditingController _descriptionController;
   late TextEditingController _capacityController;
-  late TextEditingController _cellCountController; // New controller for cell count
+  late TextEditingController _cellCountController;
   DateTime? _buyDate;
 
   List<Map<String, dynamic>> _batteryTypes = [];
-  String? _selectedTypeId;
+  String? _selectedBatteryTypeId;
 
   @override
   void initState() {
     super.initState();
     _numberController = TextEditingController(text: widget.battery['number']);
-    _capacityController = TextEditingController(text: widget.battery['capacity'].toString());
-    _cellCountController = TextEditingController(text: widget.battery['cell_count'].toString()); // Initialize cell count
+    _brandController = TextEditingController(text: widget.battery['brand']);
+    _descriptionController =
+        TextEditingController(text: widget.battery['description']);
+    _capacityController =
+        TextEditingController(text: widget.battery['capacity'].toString());
+    _cellCountController =
+        TextEditingController(text: widget.battery['cell_count'].toString());
     _loadBatteryTypes();
-    _selectedTypeId = widget.battery['type_id']?.toString();
+    _selectedBatteryTypeId = widget.battery['battery_type_id']?.toString();
     _buyDate = DateTime.tryParse(widget.battery['buy_date']);
   }
 
@@ -160,13 +169,15 @@ class _BatteryEditScreenState extends State<BatteryEditScreen> {
   void _saveBattery() async {
     if (_formKey.currentState!.validate()) {
       final capacityValue = double.tryParse(_capacityController.text) ?? 0.0;
-      final cellCount = int.tryParse(_cellCountController.text) ?? 0; // Parse cell count
+      final cellCount = int.tryParse(_cellCountController.text) ?? 0;
       final formattedBuyDate = _buyDate?.toIso8601String() ?? '';
 
       await _dbHelper.updateBattery(
         widget.battery['id'],
         _numberController.text,
-        _selectedTypeId ?? '1',
+        _brandController.text,
+        _descriptionController.text,
+        _selectedBatteryTypeId ?? '1',
         capacityValue,
         formattedBuyDate,
         cellCount,
@@ -189,11 +200,19 @@ class _BatteryEditScreenState extends State<BatteryEditScreen> {
               TextFormField(
                 controller: _numberController,
                 decoration: const InputDecoration(labelText: 'Battery Number'),
-                validator: (value) => value == null || value.isEmpty ? 'Required field' : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Required field' : null,
               ),
-              const SizedBox(height: 16),
+              TextFormField(
+                controller: _brandController,
+                decoration: const InputDecoration(labelText: 'Brand'),
+              ),
+              TextField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(labelText: 'description'),
+              ),
               DropdownButtonFormField<String>(
-                value: _selectedTypeId,
+                value: _selectedBatteryTypeId,
                 decoration: const InputDecoration(labelText: 'Battery Type'),
                 items: _batteryTypes
                     .map((type) => DropdownMenuItem<String>(
@@ -203,26 +222,33 @@ class _BatteryEditScreenState extends State<BatteryEditScreen> {
                     .toList(),
                 onChanged: (value) {
                   setState(() {
-                    _selectedTypeId = value;
+                    _selectedBatteryTypeId = value;
                   });
                 },
-                validator: (value) => value == null || value.isEmpty ? 'Please select a type' : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please select a type'
+                    : null,
               ),
-              const SizedBox(height: 16),
               TextFormField(
                 controller: _capacityController,
                 decoration: const InputDecoration(labelText: 'Capacity (mAh)'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value == null || value.isEmpty || double.tryParse(value) == null ? 'Enter a valid number' : null,
+                validator: (value) => value == null ||
+                        value.isEmpty ||
+                        double.tryParse(value) == null
+                    ? 'Enter a valid number'
+                    : null,
               ),
-              const SizedBox(height: 16),
               TextFormField(
-                controller: _cellCountController, // TextField for cell count
+                controller: _cellCountController,
                 decoration: const InputDecoration(labelText: 'Cell Count'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value == null || value.isEmpty || int.tryParse(value) == null ? 'Enter a valid number' : null,
+                validator: (value) => value == null ||
+                        value.isEmpty ||
+                        int.tryParse(value) == null
+                    ? 'Enter a valid number'
+                    : null,
               ),
-              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -240,7 +266,9 @@ class _BatteryEditScreenState extends State<BatteryEditScreen> {
                           });
                         }
                       },
-                      child: Text(_buyDate == null ? 'Select Buy Date' : 'Buy Date: ${_buyDate.toString().split(' ')[0]}'),
+                      child: Text(_buyDate == null
+                          ? 'Select Buy Date'
+                          : 'Buy Date: ${_buyDate.toString().split(' ')[0]}'),
                     ),
                   ),
                 ],

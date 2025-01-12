@@ -31,7 +31,7 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
   Future<void> _addUsage() async {
     if (_usageController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a usage count.')),
+        const SnackBar(content: Text('Please enter a cycle/usage count.')),
       );
       return;
     }
@@ -39,7 +39,7 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
     final usageCount = int.tryParse(_usageController.text);
     if (usageCount == null || usageCount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid usage count.')),
+        const SnackBar(content: Text('Please enter a valid cycle/usage count.')),
       );
       return;
     }
@@ -47,13 +47,12 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
     // Use the batteryId passed into the widget
     await _dbHelper.insertUsage(
       widget.batteryId,
-      '1',
       _formatDate(_usageDate),
       usageCount,
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Usage added successfully!')),
+      const SnackBar(content: Text('cycle/Usage added successfully!')),
     );
 
     _usageController.clear();
@@ -65,7 +64,7 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Battery Usage')),
+      appBar: AppBar(title: const Text('Add Battery cycle/Usage')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -76,8 +75,8 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
               controller: _usageController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Usage Count',
-                hintText: 'Enter the usage count for today',
+                labelText: 'cycle/Usage Count',
+                hintText: 'Enter the cycle/usage count for today',
               ),
             ),
             const SizedBox(height: 16),
@@ -86,7 +85,7 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
             Row(
               children: [
                 Text(
-                  'Usage Date: ${_formatDate(_usageDate)}',
+                  'cycle/Usage Date: ${_formatDate(_usageDate)}',
                   style: const TextStyle(fontSize: 16),
                 ),
                 IconButton(
@@ -112,7 +111,7 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
             // Add Usage Button
             ElevatedButton(
               onPressed: _addUsage,
-              child: const Text('Add Usage'),
+              child: const Text('Add cycle/Usage'),
             ),
           ],
         ),

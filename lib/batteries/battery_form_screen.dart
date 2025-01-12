@@ -12,12 +12,13 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
 
   final TextEditingController _numberController = TextEditingController();
   final TextEditingController _brandController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _capacityController = TextEditingController();
   final TextEditingController _cellCountController = TextEditingController();
   DateTime? _buyDate;
 
   List<Map<String, dynamic>> _batteryTypes = [];
-  int? _selectedTypeId;
+  int? _selectedBatteryTypeId;
 
   @override
   void initState() {
@@ -35,7 +36,7 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
   Future<void> _addBattery() async {
     if (_formKey.currentState!.validate()) {
       final selectedType =
-          _batteryTypes.firstWhere((type) => type['id'] == _selectedTypeId);
+          _batteryTypes.firstWhere((type) => type['id'] == _selectedBatteryTypeId);
 
       // Calculating storage_watt and full_watt
       final cellCount = int.parse(_cellCountController.text);
@@ -52,9 +53,9 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
       await _dbHelper.insertBattery({
         'number': _numberController.text,
         'brand': _brandController.text,
-        'type_id': _selectedTypeId,
+        'battery_type_id': _selectedBatteryTypeId,
+        'description' : _descriptionController.text,
         'buy_date': formattedBuyDate,
-        'end_date': '',
         'cell_count': cellCount,
         'capacity': capacity,
         'storage_watt': double.parse(storageWatt.toStringAsFixed(2)),
@@ -68,7 +69,7 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Battery')),
+      appBar: AppBar(title: const Text('Add a Battery')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -88,9 +89,13 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
                   controller: _brandController,
                   decoration: const InputDecoration(labelText: 'Brand'),
                 ),
+                TextField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                ),
                 DropdownButtonFormField<int>(
-                  value: _selectedTypeId,
-                  decoration: const InputDecoration(labelText: 'Type*'),
+                  value: _selectedBatteryTypeId,
+                  decoration: const InputDecoration(labelText: 'Battery Type*'),
                   items: _batteryTypes.map((type) {
                     return DropdownMenuItem<int>(
                       value: type['id'],
@@ -99,7 +104,7 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
-                      _selectedTypeId = value;
+                      _selectedBatteryTypeId = value;
                     });
                   },
                   validator: (value) =>

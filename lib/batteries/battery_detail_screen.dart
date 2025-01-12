@@ -20,20 +20,55 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
   bool _showAllReports = false;
   bool _showAllUsage = false;
 
+  bool get _isNotWrittenOff =>
+      widget.battery['end_date'] == null ||
+      widget.battery['end_date'].isEmpty;
+
   @override
   void initState() {
     super.initState();
     _loadReportsAndUsage();
+    print(_isNotWrittenOff);
   }
 
-  // Load the reports and usage for the current battery
   Future<void> _loadReportsAndUsage() async {
-    final reports = await _dbHelper.getReports(widget.battery['id'], '1');
-    final usage = await _dbHelper.getUsageForItem(widget.battery['id'], '1');
+    final reports = await _dbHelper.getReports(widget.battery['id']);
+    final usage = await _dbHelper.getUsageForItem(widget.battery['id']);
     setState(() {
       _reports = reports;
       _usage = usage;
     });
+  }
+
+  Future<void> _writeOffBattery() async {
+    final confirmation = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Write Off this Battery'),
+          content:
+              const Text('You can write off batteries if there not usable anymore or if you lost them.\n\n Are you sure you want to write off this battery?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmation == true) {
+      final currentDate = DateTime.now(); // Get DateTime directly
+      await _dbHelper.updateBatteryEndDate(widget.battery['id'], currentDate);
+      setState(() {
+        widget.battery['end_date'] = currentDate.toIso8601String();
+      });
+    }
   }
 
   String _formatDate(String? date) {
@@ -46,14 +81,18 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
   void _navigateToAddReport(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => BatteryAddReportScreen(batteryId: widget.battery['id'])),
+      MaterialPageRoute(
+          builder: (context) =>
+              BatteryAddReportScreen(batteryId: widget.battery['id'])),
     ).then((_) => _loadReportsAndUsage());
   }
 
   void _navigateToAddUsage(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => BatteryAddUsageScreen(batteryId: widget.battery['id'])),
+      MaterialPageRoute(
+          builder: (context) =>
+              BatteryAddUsageScreen(batteryId: widget.battery['id'])),
     ).then((_) => _loadReportsAndUsage());
   }
 
@@ -61,78 +100,118 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Battery Details')),
-      body: SingleChildScrollView( // Make the page scrollable
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ID and number at the top with bold and bigger font
-            Text('(${widget.battery['id']})',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text('Name/Number: ${widget.battery['number'] ?? 'Unknown'}',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '(${widget.battery['id']})',
+                  style: const TextStyle(
+                      fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                if (_isNotWrittenOff)
+                  ElevatedButton(
+                    onPressed: _writeOffBattery,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 215, 88, 78),
+                      foregroundColor: Colors.black,
+                    ),
+                    child: const Text('Write Off'),
+                  ),
+              ],
+            ),
+            Text(
+              'Name/Number: ${widget.battery['number'] ?? 'Unknown'}',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
 
-            // Type and Capacity next to each other
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Type: ${widget.battery['type'] ?? 'Unknown'}',
                     style: const TextStyle(fontSize: 16)),
-                Text('Capacity: ${widget.battery['capacity'] ?? 'N/A'} mAh',
+                if (widget.battery['buy_date'] != null ||
+                    widget.battery['buy_date'].isEmpty)
+                  Text('Bought on: ${_formatDate(widget.battery['buy_date'])}',
+                      style: const TextStyle(fontSize: 16)),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Other Details
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Brand: ${widget.battery['brand'] ?? '/'}',
+                    style: const TextStyle(fontSize: 16)),
+                Text('Description: ${widget.battery['description'] ?? '/'}',
                     style: const TextStyle(fontSize: 16)),
               ],
             ),
             const SizedBox(height: 8),
 
-            // Storage Watt and Full Watt next to each other
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Storage Watt: ${widget.battery['storage_watt'] ?? 'N/A'} W',
+                Text('Capacity: ${widget.battery['capacity'] ?? 'unknown'}mAh',
                     style: const TextStyle(fontSize: 16)),
-                Text('Full Watt: ${widget.battery['full_watt'] ?? 'N/A'} W',
+                Text(
+                    'Cell count: ${widget.battery['cell_count'] ?? 'unknown'}s',
                     style: const TextStyle(fontSize: 16)),
               ],
             ),
             const SizedBox(height: 8),
 
-            // Buy Date and End Date next to each other
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (widget.battery['buy_date'] != null || widget.battery['buy_date'].isEmpty)
-                  Text('Buy Date: ${_formatDate(widget.battery['buy_date'])}',
-                      style: const TextStyle(fontSize: 16)),
-                if (widget.battery['end_date'] != null || widget.battery['end_date'].isEmpty)
-                  Text('End Date: ${_formatDate(widget.battery['end_date'])}',
-                      style: const TextStyle(fontSize: 16)),
+                Text('Full Watt: ${widget.battery['full_watt'] ?? 'unknown'}W',
+                    style: const TextStyle(fontSize: 16)),
+                Text(
+                    'Storage Watt: ${widget.battery['storage_watt'] ?? 'unknown'}W',
+                    style: const TextStyle(fontSize: 16)),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Buttons for adding report and usage
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: () => _navigateToAddUsage(context),
-                  child: const Text('Add cycle'),
-                ),
-                ElevatedButton(
-                  onPressed: () => _navigateToAddReport(context),
-                  child: const Text('Add Report'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+            // Conditionally Render Buttons
+            if (_isNotWrittenOff)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => _navigateToAddReport(context),
+                    style:
+                        ElevatedButton.styleFrom(foregroundColor: Colors.black),
+                    child: const Text('Add Report'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => _navigateToAddUsage(context),
+                    style:
+                        ElevatedButton.styleFrom(foregroundColor: Colors.black),
+                    child: const Text('Add cycle/usage'),
+                  ),
+                ],
+              )
+            else
+              const Text(
+                'This battery has been written off.',
+                style: TextStyle(fontSize: 16, color: Colors.red),
+              ),
+            const SizedBox(height: 8),
 
-            // Display reports for this battery
+            // Reports Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Battery issues/reports:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 if (_reports.isNotEmpty)
                   TextButton(
                     onPressed: () {
@@ -147,21 +226,24 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
             if (_reports.isEmpty)
               const Text('No reports available.')
             else
-              ..._reports.take(_showAllReports ? _reports.length : 3).map((report) {
+              ..._reports
+                  .take(_showAllReports ? _reports.length : 3)
+                  .map((report) {
                 return ListTile(
                   title: Text(report['report_text']),
                   subtitle: Text('Date: ${_formatDate(report['report_date'])}'),
                 );
-              }).toList(),
+              }),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
-            // Display usage for this battery
+            // Usage Section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Battery cycles:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 if (_usage.isNotEmpty)
                   TextButton(
                     onPressed: () {
@@ -178,10 +260,10 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
             else
               ..._usage.take(_showAllUsage ? _usage.length : 3).map((usage) {
                 return ListTile(
-                  title: Text('cycle Count: ${usage['usage_count']}'),
+                  title: Text('Cycle Count: ${usage['usage_count']}'),
                   subtitle: Text('Date: ${_formatDate(usage['usage_date'])}'),
                 );
-              }).toList(),
+              }),
           ],
         ),
       ),
