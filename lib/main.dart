@@ -40,6 +40,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _dumpDatabase() async {
     final batteries = await _dbHelper.getAllBatteries();
+    final batteryResistance = await _dbHelper.getAllBatteryResistances();
     final reports = await _dbHelper.getAllReports();
     final usage = await _dbHelper.getAllUsage();
     final expenses = await _dbHelper.getAllExpenses();
@@ -48,6 +49,9 @@ class _MainScreenState extends State<MainScreen> {
 
     print('Batteries:');
     batteries.forEach((battery) => print(battery));
+
+    print('\nbattery_resistance:');
+    batteryResistance.forEach((battery_resistance) => print(battery_resistance));
 
     print('\nReports:');
     reports.forEach((report) => print(report));
@@ -73,7 +77,6 @@ class _MainScreenState extends State<MainScreen> {
         HomeScreen(),
         if (settings['batteries_enabled'] == 1) BatteryListScreen(),
         if (settings['drones_enabled'] == 1) DronesScreen(),
-        // if (settings['expenses_enabled'] == 1) DroneShoppingScreen(),
       ];
 
       _bottomNavItems = [
@@ -91,11 +94,6 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.flight),
             label: 'Drones',
           ),
-        // if (settings['expenses_enabled'] == 1)
-        //   const BottomNavigationBarItem(
-        //     icon: Icon(Icons.shopping_cart),
-        //     label: 'Shopping',
-        //   ),
       ];
     });
   }
@@ -110,7 +108,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('The drone logbook'),
+        title: const Text('The Drone Logbook'),
       ),
       body: _screens.isNotEmpty
           ? _screens[_selectedIndex]
@@ -145,8 +143,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, int> _settings = {
     'batteries_enabled': 0,
     'drones_enabled': 0,
-    // 'expenses_enabled': 0,
   };
+  bool _isSettingsExpanded = false;
 
   @override
   void initState() {
@@ -170,39 +168,145 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _saveSettings() async {
     await _dbHelper.updateSettings(_settings);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings saved successfully!')),
+      const SnackBar(
+        content: Text(
+          'Settings saved successfully! Please restart the app for changes to take effect.',
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: _settings.isNotEmpty
-          ? Column(
-              children: [
-                SwitchListTile(
-                  title: const Text('Enable Batteries'),
-                  value: _settings['batteries_enabled'] == 1,
-                  onChanged: (value) => _toggleSetting('batteries_enabled'),
+      appBar: AppBar(
+        title: const Text('Home page'),
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+        elevation: 2.0,
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade50, Colors.blue.shade50],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
-                SwitchListTile(
-                  title: const Text('Enable Drones'),
-                  value: _settings['drones_enabled'] == 1,
-                  onChanged: (value) => _toggleSetting('drones_enabled'),
+                child: const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Welcome to The Drone Logbook!',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Use this app to manage your batteries, drones, and more. '
+                        'You can enable or disable specific features below.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black54,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-                // SwitchListTile(
-                //   title: const Text('Enable Expenses'),
-                //   value: _settings['expenses_enabled'] == 1,
-                //   onChanged: (value) => _toggleSetting('expenses_enabled'),
-                // ),
-                ElevatedButton(
-                  onPressed: _saveSettings,
-                  child: const Text('Save Settings'),
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isSettingsExpanded = !_isSettingsExpanded;
+                  });
+                },
+                child: Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  child: ListTile(
+                    title: const Text(
+                      'Settings',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    trailing: Icon(
+                      _isSettingsExpanded
+                          ? Icons.expand_less
+                          : Icons.expand_more,
+                      color: const Color.fromARGB(255, 59, 131, 255),
+                    ),
+                  ),
                 ),
-              ],
-            )
-          : const Center(child: CircularProgressIndicator()),
+              ),
+              if (_isSettingsExpanded)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  child: Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 10.0),
+                      child: Column(
+                        children: [
+                          SwitchListTile(
+                            title: const Text('Enable Batteries'),
+                            value: _settings['batteries_enabled'] == 1,
+                            onChanged: (value) =>
+                                _toggleSetting('batteries_enabled'),
+                          ),
+                          SwitchListTile(
+                            title: const Text('Enable Drones'),
+                            value: _settings['drones_enabled'] == 1,
+                            onChanged: (value) =>
+                                _toggleSetting('drones_enabled'),
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            onPressed: _saveSettings,
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20.0, vertical: 10.0),
+                              child: Text(
+                                'Save Settings',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -214,30 +318,6 @@ class DronesScreen extends StatelessWidget {
       child: Text(
         'Drones list Screen (to be implemented)',
         style: TextStyle(fontSize: 18),
-      ),
-    );
-  }
-}
-
-class DroneShoppingScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Drone spender tracker Screen (to be implemented)',
-        style: TextStyle(fontSize: 18),
-      ),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: const Center(
-        child: Text('Settings Page (to be implemented)'),
       ),
     );
   }

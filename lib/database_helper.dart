@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -18,6 +20,12 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
+    // ignore: unused_local_variable
+    final path = join(dbPath, 'battery.db');
+
+    // Uncomment the next line to clear the database during development
+    // await _deleteDatabase(path);
+
     return openDatabase(
       join(dbPath, 'battery.db'),
       version: 4, // Incremented version
@@ -51,6 +59,25 @@ class DatabaseHelper {
         )
       ''');
 
+        await db.execute('''
+        CREATE TABLE battery_resistance (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          battery_id INTEGER NOT NULL,
+          resistance_c1 REAL,
+          resistance_c2 REAL,
+          resistance_c3 REAL,
+          resistance_c4 REAL,
+          resistance_c5 REAL,
+          resistance_c6 REAL,
+          resistance_c7 REAL,
+          resistance_c8 REAL,
+          resistance_c9 REAL,
+          resistance_c10 REAL,
+          date DATE DEFAULT (DATE('now')),
+          FOREIGN KEY (battery_id) REFERENCES batteries (id) ON DELETE CASCADE
+        )
+      ''');
+
         // Create `reports` table
         await db.execute('''
         CREATE TABLE reports (
@@ -78,6 +105,7 @@ class DatabaseHelper {
         CREATE TABLE settings (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           firsttime INTERGER NOT NULL DEFAULT 0,
+          firsttimebattery INTERGER NOT NULL DEFAULT 0,
           batteries_enabled INTEGER NOT NULL DEFAULT 0,
           drones_enabled INTEGER NOT NULL DEFAULT 0,
           expenses_enabled INTEGER NOT NULL DEFAULT 0
@@ -119,6 +147,14 @@ class DatabaseHelper {
     );
   }
 
+  Future<void> _deleteDatabase(String path) async {
+    final file = File(path);
+    if (await file.exists()) {
+      await deleteDatabase(path);
+      print('Database deleted at $path');
+    }
+  }
+
   Future<void> _insertDefaultData(Database db) async {
     // Default battery types
     const defaultBatteryTypes = [
@@ -154,9 +190,10 @@ class DatabaseHelper {
     // Default settings
     await db.insert('settings', {
       'firsttime': 0,
+      'firsttimebattery': 0,
       'batteries_enabled': 1,
-      'drones_enabled': 1,
-      'expenses_enabled': 1,
+      'drones_enabled': 0,
+      'expenses_enabled': 0,
     });
   }
 
@@ -280,6 +317,50 @@ class DatabaseHelper {
       'batteries',
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  // battery resistance
+  Future<List<Map<String, dynamic>>> getAllBatteryResistances() async {
+    final db = await database;
+    return await db.query('battery_resistance ');
+  }
+
+  Future<int> addInternalResistance({
+    required int batteryId,
+    required Map<String, double> resistances,
+    DateTime? date,
+  }) async {
+    final db = await database;
+    final resistanceData = {
+      'battery_id': batteryId,
+      ...resistances,
+      'date': date != null
+          ? DateFormat('yyyy-MM-dd').format(date)
+          : DateFormat('yyyy-MM-dd').format(DateTime.now()),
+    };
+    return await db.insert('battery_resistance', resistanceData);
+  }
+
+  // Function to delete a specific resistance record
+  Future<int> deleteInternalResistance(int id) async {
+    final db = await database;
+    return await db.delete(
+      'battery_resistance',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // Function to get all resistance records for a specific battery
+  Future<List<Map<String, dynamic>>> getInternalResistancesForBattery(
+      int batteryId) async {
+    final db = await database;
+    return await db.query(
+      'battery_resistance',
+      where: 'battery_id = ?',
+      whereArgs: [batteryId],
+      orderBy: 'date DESC',
     );
   }
 

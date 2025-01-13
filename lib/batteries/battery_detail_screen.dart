@@ -17,26 +17,31 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   List<Map<String, dynamic>> _reports = [];
   List<Map<String, dynamic>> _usage = [];
-  bool _showAllReports = false;
   bool _showAllUsage = false;
+  bool _showAllResistance = false;
+  bool _showAllReports = false;
 
   bool get _isNotWrittenOff =>
-      widget.battery['end_date'] == null ||
-      widget.battery['end_date'].isEmpty;
+      widget.battery['end_date'] == null || widget.battery['end_date'].isEmpty;
 
   @override
   void initState() {
     super.initState();
-    _loadReportsAndUsage();
+    _loadReportsResistanceUsage();
     print(_isNotWrittenOff);
   }
 
-  Future<void> _loadReportsAndUsage() async {
+  List<Map<String, dynamic>> _resistances = [];
+
+  Future<void> _loadReportsResistanceUsage() async {
     final reports = await _dbHelper.getReports(widget.battery['id']);
     final usage = await _dbHelper.getUsageForItem(widget.battery['id']);
+    final resistances =
+        await _dbHelper.getInternalResistancesForBattery(widget.battery['id']);
     setState(() {
       _reports = reports;
       _usage = usage;
+      _resistances = resistances;
     });
   }
 
@@ -46,8 +51,8 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Write Off this Battery'),
-          content:
-              const Text('You can write off batteries if there not usable anymore or if you lost them.\n\n Are you sure you want to write off this battery?'),
+          content: const Text(
+              'You can write off batteries if there not usable anymore or if you lost them.\n\n Are you sure you want to write off this battery?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -84,7 +89,30 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
       MaterialPageRoute(
           builder: (context) =>
               BatteryAddReportScreen(batteryId: widget.battery['id'])),
-    ).then((_) => _loadReportsAndUsage());
+    ).then((_) => _loadReportsResistanceUsage());
+  }
+
+  void _navigateToAddResistance(BuildContext context) {
+    final cellCount = widget.battery['cell_count'] ?? 0;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add Battery Resistance'),
+          content: ResistanceForm(
+            cellCount: cellCount,
+            batteryId: widget.battery['id'],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    ).then((_) => _loadReportsResistanceUsage());
   }
 
   void _navigateToAddUsage(BuildContext context) {
@@ -93,7 +121,7 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
       MaterialPageRoute(
           builder: (context) =>
               BatteryAddUsageScreen(batteryId: widget.battery['id'])),
-    ).then((_) => _loadReportsAndUsage());
+    ).then((_) => _loadReportsResistanceUsage());
   }
 
   @override
@@ -191,10 +219,16 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
                     child: const Text('Add Report'),
                   ),
                   ElevatedButton(
+                    onPressed: () => _navigateToAddResistance(context),
+                    style:
+                        ElevatedButton.styleFrom(foregroundColor: Colors.black),
+                    child: const Text('Add Resistance'),
+                  ),
+                  ElevatedButton(
                     onPressed: () => _navigateToAddUsage(context),
                     style:
                         ElevatedButton.styleFrom(foregroundColor: Colors.black),
-                    child: const Text('Add cycle/usage'),
+                    child: const Text('Add Cycle'),
                   ),
                 ],
               )
@@ -204,6 +238,76 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
                 style: TextStyle(fontSize: 16, color: Colors.red),
               ),
             const SizedBox(height: 8),
+
+            // Usage Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Battery cycles:',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                if (_usage.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _showAllUsage = !_showAllUsage;
+                      });
+                    },
+                    child: Text(_showAllUsage ? 'Show Less' : 'Show All'),
+                  ),
+              ],
+            ),
+            if (_usage.isEmpty)
+              const Text('No cycles records available.')
+            else
+              ..._usage.take(_showAllUsage ? _usage.length : 3).map((usage) {
+                return ListTile(
+                  title: Text('Cycle Count: ${usage['usage_count']}'),
+                  subtitle: Text('Date: ${_formatDate(usage['usage_date'])}'),
+                );
+              }),
+
+            // Resistances Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Battery resistances:',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                if (_resistances.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _showAllResistance = !_showAllResistance;
+                      });
+                    },
+                    child: Text(_showAllResistance ? 'Show Less' : 'Show All'),
+                  ),
+              ],
+            ),
+            if (_resistances.isEmpty)
+              const Text('No resistances records available.')
+            else
+              ..._resistances
+                  .take(_showAllResistance ? _resistances.length : 3)
+                  .map((resistance) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (int i = 1; i <= widget.battery['cell_count']; i++)
+                      if (resistance['resistance_c$i'] != null)
+                        Text(
+                          'S$i: ${resistance['resistance_c$i']} mΩ',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                    Text(
+                      'Date: ${_formatDate(resistance['date'])}',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    const Divider(), // Separate entries visually
+                  ],
+                );
+              }),
 
             // Reports Section
             Row(
@@ -236,36 +340,78 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
               }),
 
             const SizedBox(height: 8),
-
-            // Usage Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Battery cycles:',
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                if (_usage.isNotEmpty)
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _showAllUsage = !_showAllUsage;
-                      });
-                    },
-                    child: Text(_showAllUsage ? 'Show Less' : 'Show All'),
-                  ),
-              ],
-            ),
-            if (_usage.isEmpty)
-              const Text('No cycles records available.')
-            else
-              ..._usage.take(_showAllUsage ? _usage.length : 3).map((usage) {
-                return ListTile(
-                  title: Text('Cycle Count: ${usage['usage_count']}'),
-                  subtitle: Text('Date: ${_formatDate(usage['usage_date'])}'),
-                );
-              }),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ResistanceForm extends StatefulWidget {
+  final int cellCount;
+  final int batteryId;
+
+  ResistanceForm({required this.cellCount, required this.batteryId});
+
+  @override
+  _ResistanceFormState createState() => _ResistanceFormState();
+}
+
+class _ResistanceFormState extends State<ResistanceForm> {
+  late List<TextEditingController> controllers;
+
+  @override
+  void initState() {
+    super.initState();
+    controllers = List.generate(
+      widget.cellCount,
+      (_) => TextEditingController(),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (var controller in controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _saveResistance() async {
+    final resistances = {
+      for (int i = 0; i < controllers.length; i++)
+        'resistance_c${i + 1}': double.tryParse(controllers[i].text) ?? 0.0,
+    };
+
+    await DatabaseHelper().addInternalResistance(
+      batteryId: widget.batteryId,
+      resistances: resistances,
+    );
+
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ...List.generate(widget.cellCount, (index) {
+            return TextField(
+              controller: controllers[index],
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Cell ${index + 1} Resistance (mΩ)',
+              ),
+            );
+          }),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _saveResistance,
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
