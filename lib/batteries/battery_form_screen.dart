@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../database_helper.dart';
 
 class BatteryFormScreen extends StatefulWidget {
+  const BatteryFormScreen({super.key});
+
   @override
   _BatteryFormScreenState createState() => _BatteryFormScreenState();
 }

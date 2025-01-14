@@ -5,7 +5,7 @@ import '../database_helper.dart';
 class BatteryAddUsageScreen extends StatefulWidget {
   final int batteryId;
 
-  BatteryAddUsageScreen({required this.batteryId});
+  const BatteryAddUsageScreen({super.key, required this.batteryId});
 
   @override
   _BatteryAddUsageScreenState createState() => _BatteryAddUsageScreenState();

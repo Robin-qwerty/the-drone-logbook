@@ -39,6 +39,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   intl: ^0.20.1
   flutter_slidable: ^3.1.2
+  pdf: ^3.11.1
+  path_provider: ^2.1.5
+  csv: ^6.0.0
+  share_plus: ^10.1.4
+  external_path: ^2.0.1
 
 dev_dependencies:
   flutter_test:

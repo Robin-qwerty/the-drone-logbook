@@ -227,6 +227,23 @@ class DatabaseHelper {
     );
   }
 
+  Future<Map<String, List<Map<String, dynamic>>>> getAllData() async {
+    return {
+      'Batteries': await getAllBatteries(),
+      'Battery Resistance': await getAllBatteryResistances(),
+      'Reports': await getAllReports(),
+      'Usage': await getAllUsage(),
+      'Expenses': await getAllExpenses(),
+      'Drones': await getAllDrones(),
+      'Settings': await getAllSettings(),
+    };
+  }
+
+  Future<String> getDatabaseSQLDump() async {
+    // Implement SQL dump generation logic here
+    return "SQL Dump Data";
+  }
+
   // batteries
   Future<List<Map<String, dynamic>>> getAllBatteries() async {
     final db = await database;
@@ -389,7 +406,7 @@ class DatabaseHelper {
     final db = await database;
     return db.insert('usage', {
       'battery_id': batteryId,
-      'usage_date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      'usage_date': usageDate,
       'usage_count': count,
     });
   }

@@ -7,7 +7,7 @@ import '../database_helper.dart';
 class BatteryDetailScreen extends StatefulWidget {
   final Map<String, dynamic> battery;
 
-  BatteryDetailScreen({required this.battery});
+  const BatteryDetailScreen({super.key, required this.battery});
 
   @override
   _BatteryDetailScreenState createState() => _BatteryDetailScreenState();
@@ -152,6 +152,8 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
                   ),
               ],
             ),
+            const Divider(),
+
             Text(
               'Name/Number: ${widget.battery['number'] ?? 'Unknown'}',
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -205,7 +207,9 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
                     style: const TextStyle(fontSize: 16)),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            const Divider(),
+            const SizedBox(height: 8),
 
             // Conditionally Render Buttons
             if (_isNotWrittenOff)
@@ -237,7 +241,7 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
                 'This battery has been written off.',
                 style: TextStyle(fontSize: 16, color: Colors.red),
               ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
             // Usage Section
             Row(
@@ -260,12 +264,13 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
             if (_usage.isEmpty)
               const Text('No cycles records available.')
             else
-              ..._usage.take(_showAllUsage ? _usage.length : 3).map((usage) {
+              ..._usage.take(_showAllUsage ? _usage.length : 2).map((usage) {
                 return ListTile(
                   title: Text('Cycle Count: ${usage['usage_count']}'),
                   subtitle: Text('Date: ${_formatDate(usage['usage_date'])}'),
                 );
               }),
+            const Divider(),
 
             // Resistances Section
             Row(
@@ -289,7 +294,7 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
               const Text('No resistances records available.')
             else
               ..._resistances
-                  .take(_showAllResistance ? _resistances.length : 3)
+                  .take(_showAllResistance ? _resistances.length : 2)
                   .map((resistance) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,13 +336,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
               const Text('No reports available.')
             else
               ..._reports
-                  .take(_showAllReports ? _reports.length : 3)
+                  .take(_showAllReports ? _reports.length : 2)
                   .map((report) {
                 return ListTile(
                   title: Text(report['report_text']),
                   subtitle: Text('Date: ${_formatDate(report['report_date'])}'),
                 );
               }),
+            const Divider(),
 
             const SizedBox(height: 8),
           ],
@@ -351,7 +357,8 @@ class ResistanceForm extends StatefulWidget {
   final int cellCount;
   final int batteryId;
 
-  ResistanceForm({required this.cellCount, required this.batteryId});
+  const ResistanceForm(
+      {super.key, required this.cellCount, required this.batteryId});
 
   @override
   _ResistanceFormState createState() => _ResistanceFormState();

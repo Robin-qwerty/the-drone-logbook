@@ -4,6 +4,8 @@ import 'battery_detail_screen.dart';
 import 'battery_form_screen.dart';
 
 class BatteryListScreen extends StatefulWidget {
+  const BatteryListScreen({super.key});
+
   @override
   _BatteryListScreenState createState() => _BatteryListScreenState();
 }
@@ -113,8 +115,8 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddBattery,
-        child: const Icon(Icons.add),
         tooltip: 'Add Battery',
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -124,7 +126,7 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
 class BatteryEditScreen extends StatefulWidget {
   final Map<String, dynamic> battery;
 
-  BatteryEditScreen({required this.battery});
+  const BatteryEditScreen({super.key, required this.battery});
 
   @override
   _BatteryEditScreenState createState() => _BatteryEditScreenState();

@@ -1,12 +1,21 @@
-import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:external_path/external_path.dart';
 import 'batteries/battery_list_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:csv/csv.dart';
 import 'database_helper.dart';
+import 'dart:io';
 
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,6 +29,8 @@ class MyApp extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
   @override
   _MainScreenState createState() => _MainScreenState();
 }
@@ -48,25 +59,39 @@ class _MainScreenState extends State<MainScreen> {
     final settings = await _dbHelper.getAllSettings();
 
     print('Batteries:');
-    batteries.forEach((battery) => print(battery));
+    for (var battery in batteries) {
+      print(battery);
+    }
 
     print('\nbattery_resistance:');
-    batteryResistance.forEach((battery_resistance) => print(battery_resistance));
+    for (var battery_resistance in batteryResistance) {
+      print(battery_resistance);
+    }
 
     print('\nReports:');
-    reports.forEach((report) => print(report));
+    for (var report in reports) {
+      print(report);
+    }
 
     print('\nUsage:');
-    usage.forEach((entry) => print(entry));
+    for (var entry in usage) {
+      print(entry);
+    }
 
     print('\nExpenses:');
-    expenses.forEach((entry) => print(entry));
+    for (var entry in expenses) {
+      print(entry);
+    }
 
     print('\nDrones:');
-    drones.forEach((entry) => print(entry));
+    for (var entry in drones) {
+      print(entry);
+    }
 
     print('\nSettings:');
-    settings.forEach((entry) => print(entry));
+    for (var entry in settings) {
+      print(entry);
+    }
   }
 
   Future<void> _initializeSettings() async {
@@ -134,6 +159,8 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -174,6 +201,86 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _exportToSQL() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final sqlFile = File('${directory.path}/database_export.sql');
+      final sqlDump = await _dbHelper
+          .getDatabaseSQLDump(); // Implement this in your `DatabaseHelper`
+      await sqlFile.writeAsString(sqlDump);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('SQL file exported to ${sqlFile.path}')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error exporting SQL: $e')),
+      );
+    }
+  }
+
+  Future<void> _exportToCSV() async {
+    try {
+      final path = await ExternalPath.getExternalStoragePublicDirectory(
+          ExternalPath.DIRECTORY_DOWNLOADS);
+      final csvFile = File('$path/database_export.csv');
+      final data = await _dbHelper.getAllData();
+      final csvData = const ListToCsvConverter().convert(data as List<List?>?);
+      await csvFile.writeAsString(csvData);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('CSV exported to ${csvFile.path}')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error exporting CSV: $e')),
+      );
+    }
+  }
+
+  Future<void> _exportToPDF() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final pdfFile = File('${directory.path}/database_export.pdf');
+      final fontData = await rootBundle.load("assets/fonts/Roboto-Regular.ttf");
+      final font = pw.Font.ttf(fontData);
+      final pdf = pw.Document();
+      final data = await _dbHelper
+          .getAllData(); // Combine all tables into a single structure
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              children: data.entries.map((entry) {
+                return pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      entry.key,
+                      style: pw.TextStyle(
+                          font: font,
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.Text(entry.value.toString(),
+                        style: pw.TextStyle(font: font)),
+                    pw.SizedBox(height: 10),
+                  ],
+                );
+              }).toList(),
+            );
+          },
+        ),
+      );
+      await pdfFile.writeAsBytes(await pdf.save());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PDF file exported to ${pdfFile.path}')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error exporting PDF: $e')),
+      );
+    }
   }
 
   @override
@@ -298,6 +405,54 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Export Options',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                ),
+                                onPressed: _exportToSQL,
+                                icon: const Icon(Icons.storage),
+                                label: const Text('SQL'),
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                ),
+                                onPressed: _exportToCSV,
+                                icon: const Icon(Icons.table_chart),
+                                label: const Text('CSV'),
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                ),
+                                onPressed: _exportToPDF,
+                                icon: const Icon(Icons.picture_as_pdf),
+                                label: const Text('PDF'),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -312,6 +467,8 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class DronesScreen extends StatelessWidget {
+  const DronesScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return const Center(
