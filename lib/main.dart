@@ -1,7 +1,7 @@
+import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:external_path/external_path.dart';
 import 'batteries/battery_list_screen.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -203,19 +203,37 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _exportToSQL() async {
+  Future<void> _requestStoragePermission() async {
+    if (await Permission.storage.request().isDenied) {
+      throw Exception("Storage permission denied.");
+    }
+  }
+
+  Future<void> _exportToSQL(BuildContext context) async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final sqlFile = File('${directory.path}/database_export.sql');
-      final sqlDump = await _dbHelper
-          .getDatabaseSQLDump(); // Implement this in your `DatabaseHelper`
+      // Get the Downloads directory
+      final downloadsDirectory = Directory('/storage/emulated/0/Download');
+      if (!await downloadsDirectory.exists()) {
+        throw Exception("Downloads folder not accessible.");
+      }
+
+      // Define the SQL file path
+      final sqlFile = File('${downloadsDirectory.path}/database_export.sql');
+
+      // Generate the SQL dump
+      final sqlDump = await _dbHelper.getDatabaseSQLDump();
+
+      // Write the SQL dump to the file
       await sqlFile.writeAsString(sqlDump);
+
+      // Show success message with file path
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('SQL file exported to ${sqlFile.path}')),
+        SnackBar(content: Text('SQL file saved to Downloads: ${sqlFile.path}')),
       );
     } catch (e) {
+      // Show error message if something goes wrong
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error exporting SQL: $e')),
+        SnackBar(content: Text('Error saving SQL file: $e')),
       );
     }
   }
@@ -419,13 +437,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                ),
-                                onPressed: _exportToSQL,
+                                onPressed: () async {
+                                  try {
+                                    await _requestStoragePermission();
+                                    await _exportToSQL(context);
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error: $e')),
+                                    );
+                                  }
+                                },
                                 icon: const Icon(Icons.storage),
                                 label: const Text('SQL'),
                               ),

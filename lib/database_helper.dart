@@ -218,12 +218,11 @@ class DatabaseHelper {
   Future<void> updateSettings(Map<String, int> settings) async {
     final db = await database;
 
-    // Update the single settings row by iterating over the provided map
     await db.update(
       'settings',
-      settings, // Updates multiple columns at once
-      where: 'id = ?', // Assuming there is a single row with a known ID, like 1
-      whereArgs: [1], // Adjust this if your ID or row selector differs
+      settings,
+      where: 'id = ?',
+      whereArgs: [1],
     );
   }
 
@@ -240,8 +239,42 @@ class DatabaseHelper {
   }
 
   Future<String> getDatabaseSQLDump() async {
-    // Implement SQL dump generation logic here
-    return "SQL Dump Data";
+    final db = await _initDatabase();
+
+    // Get the list of tables
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
+    );
+
+    // Initialize the SQL dump
+    final StringBuffer dump = StringBuffer();
+
+    // Iterate through each table and get its schema and data
+    for (final table in tables) {
+      final tableName = table['name'];
+
+      // Get the CREATE TABLE statement
+      final createTableResult = await db.rawQuery(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='$tableName';",
+      );
+      if (createTableResult.isNotEmpty) {
+        dump.writeln('${createTableResult.first['sql']};');
+      }
+
+      // Get the table data
+      final data = await db.query(tableName as String);
+
+      for (final row in data) {
+        final columns = row.keys.map((key) => "'$key'").join(', ');
+        final values = row.values
+            .map((value) => value is String ? "'$value'" : value)
+            .join(', ');
+        dump.writeln("INSERT INTO $tableName ($columns) VALUES ($values);");
+      }
+      dump.writeln(); // Add a blank line between table dumps
+    }
+
+    return dump.toString();
   }
 
   // batteries
@@ -359,7 +392,6 @@ class DatabaseHelper {
     return await db.insert('battery_resistance', resistanceData);
   }
 
-  // Function to delete a specific resistance record
   Future<int> deleteInternalResistance(int id) async {
     final db = await database;
     return await db.delete(
@@ -369,7 +401,6 @@ class DatabaseHelper {
     );
   }
 
-  // Function to get all resistance records for a specific battery
   Future<List<Map<String, dynamic>>> getInternalResistancesForBattery(
       int batteryId) async {
     final db = await database;
@@ -381,7 +412,12 @@ class DatabaseHelper {
     );
   }
 
-  // Reports
+  Future<void> deleteResistance(int resistanceId) async {
+    final db = await database;
+    await db.delete('resistances', where: 'id = ?', whereArgs: [resistanceId]);
+  }
+
+  // battery Reports
   Future<int> insertReport(
       int batteryId, String reportText, DateTime reportDate) async {
     final db = await database;
@@ -401,7 +437,12 @@ class DatabaseHelper {
     return db.query('reports', where: 'battery_id = ?', whereArgs: [batteryId]);
   }
 
-  // Usage
+  Future<void> deleteReport(int reportId) async {
+    final db = await database;
+    await db.delete('reports', where: 'id = ?', whereArgs: [reportId]);
+  }
+
+  // battery Usage
   Future<int> insertUsage(int batteryId, String usageDate, int count) async {
     final db = await database;
     return db.insert('usage', {
@@ -414,6 +455,11 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getUsageForItem(int batteryId) async {
     final db = await database;
     return db.query('usage', where: 'battery_id = ?', whereArgs: [batteryId]);
+  }
+
+  Future<void> deleteUsage(int usageId) async {
+    final db = await database;
+    await db.delete('usage', where: 'id = ?', whereArgs: [usageId]);
   }
 
   // for debug database on run
