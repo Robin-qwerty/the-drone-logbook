@@ -31,6 +31,15 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
     print(_isNotWrittenOff);
   }
 
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   List<Map<String, dynamic>> _resistances = [];
 
   Future<void> _loadReportsResistanceUsage() async {
@@ -52,7 +61,7 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
         return AlertDialog(
           title: const Text('Write Off this Battery'),
           content: const Text(
-              'You can write off batteries if there not usable anymore or if you lost them.\n\n Are you sure you want to write off this battery?'),
+              'You can write off batteries if they are not usable anymore or if you lost them.\n\n Are you sure you want to write off this battery?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -68,10 +77,23 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
     );
 
     if (confirmation == true) {
-      final currentDate = DateTime.now(); // Get DateTime directly
+      final currentDate = DateTime.now();
+
+      // Update the database
       await _dbHelper.updateBatteryEndDate(widget.battery['id'], currentDate);
+
+      // Create a mutable copy of the battery
+      final updatedBattery = Map<String, dynamic>.from(widget.battery);
+
+      // Update the mutable copy
+      updatedBattery['end_date'] = currentDate.toIso8601String();
+
+      // Use the updated copy in setState
       setState(() {
-        widget.battery['end_date'] = currentDate.toIso8601String();
+        // Replace the original battery with the updated copy
+        widget.battery
+            .clear(); // This line can be removed; you're replacing the entire map.
+        widget.battery.addAll(updatedBattery);
       });
     }
   }
@@ -87,9 +109,13 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) =>
-              BatteryAddReportScreen(batteryId: widget.battery['id'])),
-    ).then((_) => _loadReportsResistanceUsage());
+        builder: (context) =>
+            BatteryAddReportScreen(batteryId: widget.battery['id']),
+      ),
+    ).then((_) {
+      _loadReportsResistanceUsage();
+      _showSnackbar('Report added successfully!');
+    });
   }
 
   void _navigateToAddResistance(BuildContext context) {
@@ -112,16 +138,50 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
           ],
         );
       },
-    ).then((_) => _loadReportsResistanceUsage());
+    ).then((_) {
+      _loadReportsResistanceUsage();
+      _showSnackbar('Resistance added successfully!');
+    });
   }
 
   void _navigateToAddUsage(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) =>
-              BatteryAddUsageScreen(batteryId: widget.battery['id'])),
-    ).then((_) => _loadReportsResistanceUsage());
+        builder: (context) =>
+            BatteryAddUsageScreen(batteryId: widget.battery['id']),
+      ),
+    ).then((_) {
+      _loadReportsResistanceUsage();
+      _showSnackbar('cycle/Usage added successfully!');
+    });
+  }
+
+  Future<void> _confirmAndDelete(BuildContext context, String message,
+      Future<void> Function() onConfirm) async {
+    final confirmation = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirm Delete'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmation == true) {
+      await onConfirm();
+    }
   }
 
   @override
@@ -177,12 +237,30 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Brand: ${widget.battery['brand'] ?? '/'}',
-                    style: const TextStyle(fontSize: 16)),
-                Text('Description: ${widget.battery['description'] ?? '/'}',
-                    style: const TextStyle(fontSize: 16)),
+                Flexible(
+                  flex: 1,
+                  child: Text(
+                    'Brand: ${widget.battery['brand'] ?? '/'}',
+                    style: const TextStyle(fontSize: 16),
+                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  flex: 2,
+                  child: Text(
+                    'Description: ${widget.battery['description'] ?? '/'}',
+                    style: const TextStyle(fontSize: 16),
+                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ),
               ],
             ),
+
             const SizedBox(height: 8),
 
             Row(
@@ -268,8 +346,18 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
                 return ListTile(
                   title: Text('Cycle Count: ${usage['usage_count']}'),
                   subtitle: Text('Date: ${_formatDate(usage['usage_date'])}'),
+                  onTap: () => _confirmAndDelete(
+                    context,
+                    'Are you sure you want to delete this usage record?',
+                    () async {
+                      await _dbHelper.deleteUsage(usage['id']);
+                      await _loadReportsResistanceUsage();
+                      _showSnackbar('Usage deleted successfully!');
+                    },
+                  ),
                 );
               }),
+
             const Divider(),
 
             // Resistances Section
@@ -309,10 +397,23 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
                       'Date: ${_formatDate(resistance['date'])}',
                       style: const TextStyle(color: Colors.grey),
                     ),
-                    const Divider(), // Separate entries visually
+                    GestureDetector(
+                      onTap: () => _confirmAndDelete(
+                        context,
+                        'Are you sure you want to delete this resistance record?',
+                        () async {
+                          await _dbHelper.deleteResistance(resistance['id']);
+                          await _loadReportsResistanceUsage();
+                          _showSnackbar('Resistance deleted successfully!');
+                        },
+                      ),
+                      child: const Icon(Icons.delete, color: Colors.red),
+                    ),
                   ],
                 );
               }),
+
+            const Divider(),
 
             // Reports Section
             Row(
@@ -341,8 +442,18 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
                 return ListTile(
                   title: Text(report['report_text']),
                   subtitle: Text('Date: ${_formatDate(report['report_date'])}'),
+                  onTap: () => _confirmAndDelete(
+                    context,
+                    'Are you sure you want to delete this report?',
+                    () async {
+                      await _dbHelper.deleteReport(report['id']);
+                      await _loadReportsResistanceUsage();
+                      _showSnackbar('Report deleted successfully!');
+                    },
+                  ),
                 );
               }),
+
             const Divider(),
 
             const SizedBox(height: 8),

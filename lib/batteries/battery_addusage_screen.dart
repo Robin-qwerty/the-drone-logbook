@@ -51,10 +51,6 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
       usageCount,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('cycle/Usage added successfully!')),
-    );
-
     _usageController.clear();
 
     // Navigate back to the BatteryDetailScreen

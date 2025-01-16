@@ -49,11 +49,6 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
 
     // Insert the report into the database
     await _dbHelper.insertReport(widget.batteryId, reportText, _reportDate);
-
-    // After saving the report, show a success message and navigate back
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Report added successfully')));
-    Navigator.pop(context);
   }
 
   // Format the date to display

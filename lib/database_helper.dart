@@ -392,15 +392,6 @@ class DatabaseHelper {
     return await db.insert('battery_resistance', resistanceData);
   }
 
-  Future<int> deleteInternalResistance(int id) async {
-    final db = await database;
-    return await db.delete(
-      'battery_resistance',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
   Future<List<Map<String, dynamic>>> getInternalResistancesForBattery(
       int batteryId) async {
     final db = await database;
@@ -414,7 +405,7 @@ class DatabaseHelper {
 
   Future<void> deleteResistance(int resistanceId) async {
     final db = await database;
-    await db.delete('resistances', where: 'id = ?', whereArgs: [resistanceId]);
+    await db.delete('battery_resistance', where: 'id = ?', whereArgs: [resistanceId]);
   }
 
   // battery Reports
