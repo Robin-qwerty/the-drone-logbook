@@ -1,16 +1,37 @@
-# the_drone_logbook
+# The Drone Logbook
 
-A new Flutter project.
+The Drone Logbook is an Android-only app designed for tracking drone battery usage to monitor battery health over time. In addition, the app supports logging drone flights, tracking which drones and batteries were used, and managing an inventory of drone-related expenses, parts, and items.
 
-## Getting Started
+This project is a hobby app built for a small community of drone enthusiasts.
 
-This project is a starting point for a Flutter application.
+## Features
+- Track battery usage and monitor health.
+- Log drone flights with battery and drone details.
+- Manage an inventory for drone-related parts, items, and expenses.
+- Simple and user-friendly interface.
 
-A few resources to get you started if this is your first Flutter project:
+## Installation
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Option 1: Google Play Store
+1. Download the app directly from the [Google Play Store](https://play.google.com/store) (link will be updated when the app is published).
+2. Install the app on your Android device.
+3. Open the app and start tracking your drone activities!
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Option 2: Manual Installation (by generating an .apk)
+1 Clone this repository:
+```bash
+git clone https://github.com/Robin-qwerty/the-drone-logbook.git
+```
+2 Navigate to the project directory:
+```bash
+cd the_drone_logbook
+```
+3.1 Build the app to generate a .apk file:
+```bash
+flutter build apk --release
+```
+3.2 Or just run the code to a local device
+```bash
+flutter run
+```
+4 Install the APK on your Android device and start using it!
