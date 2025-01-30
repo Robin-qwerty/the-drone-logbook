@@ -28,6 +28,15 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
     _loadBatteryTypes();
   }
 
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _loadBatteryTypes() async {
     final types = await _dbHelper.getAllBatteryTypes();
     setState(() {
@@ -37,8 +46,8 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
 
   Future<void> _addBattery() async {
     if (_formKey.currentState!.validate()) {
-      final selectedType =
-          _batteryTypes.firstWhere((type) => type['id'] == _selectedBatteryTypeId);
+      final selectedType = _batteryTypes
+          .firstWhere((type) => type['id'] == _selectedBatteryTypeId);
 
       // Calculating storage_watt and full_watt
       final cellCount = int.parse(_cellCountController.text);
@@ -56,7 +65,7 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
         'number': _numberController.text,
         'brand': _brandController.text,
         'battery_type_id': _selectedBatteryTypeId,
-        'description' : _descriptionController.text,
+        'description': _descriptionController.text,
         'buy_date': formattedBuyDate,
         'cell_count': cellCount,
         'capacity': capacity,
@@ -64,6 +73,7 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
         'full_watt': double.parse(fullWatt.toStringAsFixed(2)),
       });
 
+      _showSnackbar('Battery has added successfully!');
       Navigator.pop(context, true);
     }
   }

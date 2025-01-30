@@ -39,7 +39,8 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
     final usageCount = int.tryParse(_usageController.text);
     if (usageCount == null || usageCount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid cycle/usage count.')),
+        const SnackBar(
+            content: Text('Please enter a valid cycle/usage count.')),
       );
       return;
     }
@@ -52,9 +53,7 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
     );
 
     _usageController.clear();
-
-    // Navigate back to the BatteryDetailScreen
-    Navigator.pop(context); // This pops the current screen and returns to the previous one
+    Navigator.pop(context);
   }
 
   @override

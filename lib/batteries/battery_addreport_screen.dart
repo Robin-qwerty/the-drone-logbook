@@ -8,8 +8,7 @@ class BatteryAddReportScreen extends StatefulWidget {
   const BatteryAddReportScreen({super.key, required this.batteryId});
 
   @override
-  _BatteryAddReportScreenState createState() =>
-      _BatteryAddReportScreenState();
+  _BatteryAddReportScreenState createState() => _BatteryAddReportScreenState();
 }
 
 class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
@@ -39,7 +38,8 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
 
   // Function to save the report to the database
   Future<void> _saveReport() async {
-    final reportText = _isCustomReport ? _reportController.text : _selectedReport;
+    final reportText =
+        _isCustomReport ? _reportController.text : _selectedReport;
 
     if (reportText == null || reportText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -49,6 +49,8 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
 
     // Insert the report into the database
     await _dbHelper.insertReport(widget.batteryId, reportText, _reportDate);
+
+    Navigator.pop(context);
   }
 
   // Format the date to display
@@ -72,7 +74,8 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
               onChanged: (String? newReport) {
                 setState(() {
                   _selectedReport = newReport;
-                  _isCustomReport = false; // Switch off custom report if a default is selected
+                  _isCustomReport =
+                      false; // Switch off custom report if a default is selected
                   _reportController.clear(); // Clear the custom report text
                 });
               },
@@ -93,8 +96,10 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
                   onChanged: (bool? newValue) {
                     setState(() {
                       _isCustomReport = newValue!;
-                      _selectedReport = null; // Reset selected report when switching to custom
-                      _reportController.clear(); // Clear the predefined selection if custom is selected
+                      _selectedReport =
+                          null; // Reset selected report when switching to custom
+                      _reportController
+                          .clear(); // Clear the predefined selection if custom is selected
                     });
                   },
                 ),

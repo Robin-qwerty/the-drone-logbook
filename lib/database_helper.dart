@@ -85,6 +85,7 @@ class DatabaseHelper {
           battery_id INTEGER,
           drone_id TEXT,
           report_text TEXT NOT NULL,
+          resolved INTERGER DEFAULT 0,
           report_date DATE DEFAULT (DATE('now'))
         )
       ''');
@@ -138,6 +139,7 @@ class DatabaseHelper {
           description TEXT,
           link TEXT,
           price REAL NOT NULL,
+          count INTEGER NOT NULL DEFAULT 1,
           buy_date DATE NOT NULL
         )
       ''');
@@ -189,8 +191,8 @@ class DatabaseHelper {
 
     // Default settings
     await db.insert('settings', {
-      'firsttime': 0,
-      'firsttimebattery': 0,
+      'firsttime': 1,
+      'firsttimebattery': 1,
       'batteries_enabled': 1,
       'drones_enabled': 0,
       'expenses_enabled': 0,
@@ -205,13 +207,13 @@ class DatabaseHelper {
       return {
         'batteries_enabled': results[0]['batteries_enabled'],
         'drones_enabled': results[0]['drones_enabled'],
-        // 'expenses_enabled': results[0]['expenses_enabled'],
+        'expenses_enabled': results[0]['expenses_enabled'],
       };
     }
     return {
       'batteries_enabled': 0,
       'drones_enabled': 0,
-      // 'expenses_enabled': 0,
+      'expenses_enabled': 0,
     };
   }
 
@@ -405,7 +407,8 @@ class DatabaseHelper {
 
   Future<void> deleteResistance(int resistanceId) async {
     final db = await database;
-    await db.delete('battery_resistance', where: 'id = ?', whereArgs: [resistanceId]);
+    await db.delete('battery_resistance',
+        where: 'id = ?', whereArgs: [resistanceId]);
   }
 
   // battery Reports

@@ -61,7 +61,7 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
         return AlertDialog(
           title: const Text('Write Off this Battery'),
           content: const Text(
-              'You can write off batteries if they are not usable anymore or if you lost them.\n\n Are you sure you want to write off this battery?'),
+              'You can write off batteries if they are not usable anymore or if you lost them.\n\n Are you sure you want to write off this battery?\n If you write off a battery you can\'t edit the battery anymore.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -79,22 +79,11 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
     if (confirmation == true) {
       final currentDate = DateTime.now();
 
-      // Update the database
       await _dbHelper.updateBatteryEndDate(widget.battery['id'], currentDate);
+      await _loadReportsResistanceUsage();
 
-      // Create a mutable copy of the battery
-      final updatedBattery = Map<String, dynamic>.from(widget.battery);
-
-      // Update the mutable copy
-      updatedBattery['end_date'] = currentDate.toIso8601String();
-
-      // Use the updated copy in setState
-      setState(() {
-        // Replace the original battery with the updated copy
-        widget.battery
-            .clear(); // This line can be removed; you're replacing the entire map.
-        widget.battery.addAll(updatedBattery);
-      });
+      _showSnackbar('Battery has been written off successfully!');
+      Navigator.pop(context, true);
     }
   }
 
