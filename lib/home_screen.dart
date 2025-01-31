@@ -55,20 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Home page'),
         backgroundColor: Colors.white,
         elevation: 2.0,
-        leading: (_settings.values.every((value) => value == 1))
-            ? BackButton(
-                color: Colors.black, // Adjust color if needed
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          MainScreen(), // Replace with your actual main screen widget
-                    ),
-                  );
-                },
-              )
-            : null, // No back button if not all settings are 1
       ),
       body: SingleChildScrollView(
         child: Container(
