@@ -58,7 +58,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _dumpDatabase() async {
     final batteries = await _dbHelper.getAllBatteries();
-    final batteryResistance = await _dbHelper.getAllBatteryResistances();
+    final batteryResistance = await _dbHelper.getAllResistances();
     final reports = await _dbHelper.getAllReports();
     final usage = await _dbHelper.getAllUsage();
     final expenses = await _dbHelper.getAllExpenses();

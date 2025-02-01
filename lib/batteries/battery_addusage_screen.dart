@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../database_helper.dart';
+import 'package:intl/intl.dart';
 
 class BatteryAddUsageScreen extends StatefulWidget {
   final int batteryId;
@@ -60,7 +60,8 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Add Battery cycle/Usage')),
-      body: Padding(
+      body: SingleChildScrollView(
+        // Wrap the body in a scrollable view
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

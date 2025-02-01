@@ -1,8 +1,7 @@
-import 'dart:io';
-
-import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart';
+import 'dart:io';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -20,131 +19,128 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
-    // ignore: unused_local_variable
-    final path = join(dbPath, 'battery.db');
+    // final path = join(dbPath, 'battery.db');
 
     // Uncomment the next line to clear the database during development
     // await _deleteDatabase(path);
 
     return openDatabase(
       join(dbPath, 'battery.db'),
-      version: 4, // Incremented version
+      version: 5,
       onCreate: (db, version) async {
-        // Create `batteries_type` table
         await db.execute('''
-        CREATE TABLE batteries_type (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          type TEXT NOT NULL,
-          min_voltage REAL NOT NULL,
-          storage_voltage REAL NOT NULL,
-          max_voltage REAL NOT NULL
-        )
-      ''');
-
-        // Create `batteries` table
-        await db.execute('''
-        CREATE TABLE batteries (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          number TEXT,
-          brand TEXT,
-          description TEXT,
-          battery_type_id INTEGER NOT NULL,
-          buy_date DATE,
-          end_date DATE,
-          cell_count INTEGER NOT NULL,
-          capacity INTEGER NOT NULL,
-          storage_watt REAL,
-          full_watt REAL,
-          FOREIGN KEY (battery_type_id) REFERENCES batteries_type (id) ON DELETE CASCADE
-        )
-      ''');
+          CREATE TABLE batteries_type (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT NOT NULL,
+            min_voltage REAL NOT NULL,
+            storage_voltage REAL NOT NULL,
+            max_voltage REAL NOT NULL
+          )
+        ''');
 
         await db.execute('''
-        CREATE TABLE battery_resistance (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          battery_id INTEGER NOT NULL,
-          resistance_c1 REAL,
-          resistance_c2 REAL,
-          resistance_c3 REAL,
-          resistance_c4 REAL,
-          resistance_c5 REAL,
-          resistance_c6 REAL,
-          resistance_c7 REAL,
-          resistance_c8 REAL,
-          resistance_c9 REAL,
-          resistance_c10 REAL,
-          date DATE DEFAULT (DATE('now')),
-          FOREIGN KEY (battery_id) REFERENCES batteries (id) ON DELETE CASCADE
-        )
-      ''');
+          CREATE TABLE batteries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            number TEXT,
+            brand TEXT,
+            description TEXT,
+            battery_type_id INTEGER NOT NULL,
+            buy_date DATE,
+            end_date DATE,
+            cell_count INTEGER NOT NULL,
+            capacity INTEGER NOT NULL,
+            storage_watt REAL,
+            full_watt REAL,
+            FOREIGN KEY (battery_type_id) REFERENCES batteries_type (id) ON DELETE CASCADE
+          )
+        ''');
 
-        // Create `reports` table
         await db.execute('''
-        CREATE TABLE reports (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          battery_id INTEGER,
-          drone_id TEXT,
-          report_text TEXT NOT NULL,
-          resolved INTERGER DEFAULT 0,
-          report_date DATE DEFAULT (DATE('now'))
-        )
-      ''');
+          CREATE TABLE battery_resistance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            battery_id INTEGER NOT NULL,
+            resistance_c1 REAL,
+            resistance_c2 REAL,
+            resistance_c3 REAL,
+            resistance_c4 REAL,
+            resistance_c5 REAL,
+            resistance_c6 REAL,
+            resistance_c7 REAL,
+            resistance_c8 REAL,
+            resistance_c9 REAL,
+            resistance_c10 REAL,
+            date DATE DEFAULT (DATE('now')),
+            FOREIGN KEY (battery_id) REFERENCES batteries (id) ON DELETE CASCADE
+          )
+        ''');
 
-        // Create `usage`
         await db.execute('''
-        CREATE TABLE usage (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          battery_id INTEGER,
-          drone_id TEXT,
-          usage_date DATE DEFAULT (DATE('now')),
-          usage_count INTEGER NOT NULL DEFAULT 1
-        )
-      ''');
+          CREATE TABLE reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            battery_id INTEGER,
+            drone_id TEXT,
+            resolved INTERGER DEFAULT 0,
+            report_text TEXT NOT NULL,
+            report_date DATE DEFAULT (DATE('now'))
+          )
+        ''');
 
-        // Create `settings` table
         await db.execute('''
-        CREATE TABLE settings (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          firsttime INTERGER NOT NULL DEFAULT 0,
-          firsttimebattery INTERGER NOT NULL DEFAULT 0,
-          batteries_enabled INTEGER NOT NULL DEFAULT 0,
-          drones_enabled INTEGER NOT NULL DEFAULT 0,
-          expenses_enabled INTEGER NOT NULL DEFAULT 0
-        )
-      ''');
+          CREATE TABLE usage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            battery_id INTEGER,
+            drone_id TEXT,
+            usage_date DATE DEFAULT (DATE('now')),
+            usage_count INTEGER NOT NULL DEFAULT 1
+          )
+        ''');
 
-        // Create `drones` table
         await db.execute('''
-        CREATE TABLE drones (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          description TEXT,
-          frame TEXT,
-          vtx TEXT,
-          fc TEXT,
-          motors TEXT,
-          camera TEXT,
-          props TEXT,
-          esc TEXT,
-          battery_id INTEGER,
-          FOREIGN KEY (battery_id) REFERENCES batteries (id) ON DELETE SET NULL
-        )
-      ''');
+          CREATE TABLE settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            firsttime INTERGER NOT NULL DEFAULT 0,
+            firsttimebattery INTERGER NOT NULL DEFAULT 0,
+            batteries_enabled INTEGER NOT NULL DEFAULT 0,
+            drones_enabled INTEGER NOT NULL DEFAULT 0,
+            expenses_enabled INTEGER NOT NULL DEFAULT 0
+          )
+        ''');
 
-        // Create `expenses` table
         await db.execute('''
-        CREATE TABLE expenses (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          description TEXT,
-          link TEXT,
-          price REAL NOT NULL,
-          count INTEGER NOT NULL DEFAULT 1,
-          buy_date DATE NOT NULL
-        )
-      ''');
-        // Insert default data
+          CREATE TABLE drones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT,
+            frame TEXT,
+            vtx TEXT,
+            fc TEXT,
+            motors TEXT,
+            camera TEXT,
+            props TEXT,
+            esc TEXT,
+            battery_id INTEGER,
+            FOREIGN KEY (battery_id) REFERENCES batteries (id) ON DELETE SET NULL
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT,
+            link TEXT,
+            price REAL NOT NULL,
+            count INTEGER NOT NULL DEFAULT 1,
+            buy_date DATE NOT NULL
+          )
+        ''');
         await _insertDefaultData(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 5) {
+          await db.execute(
+              'ALTER TABLE reports ADD COLUMN resolved INTEGER DEFAULT 0');
+        }
       },
     );
   }
@@ -231,7 +227,7 @@ class DatabaseHelper {
   Future<Map<String, List<Map<String, dynamic>>>> getAllData() async {
     return {
       'Batteries': await getAllBatteries(),
-      'Battery Resistance': await getAllBatteryResistances(),
+      'Battery Resistance': await getAllResistances(),
       'Reports': await getAllReports(),
       'Usage': await getAllUsage(),
       'Expenses': await getAllExpenses(),
@@ -273,7 +269,7 @@ class DatabaseHelper {
             .join(', ');
         dump.writeln("INSERT INTO $tableName ($columns) VALUES ($values);");
       }
-      dump.writeln(); // Add a blank line between table dumps
+      dump.writeln();
     }
 
     return dump.toString();
@@ -283,27 +279,30 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getAllBatteries() async {
     final db = await database;
 
-    final result = await db.rawQuery('''
-    SELECT b.*, bt.type,
-           (SELECT COUNT(u.id) 
-            FROM usage AS u 
-            WHERE u.battery_id = b.id) AS usage_count
-    FROM batteries AS b, batteries_type AS bt
-    WHERE b.battery_type_id = bt.id
-    ORDER BY b.id
+    return db.rawQuery('''
+      SELECT b.*, bt.type,
+        COALESCE((SELECT SUM(u.usage_count) 
+          FROM usage AS u 
+          WHERE u.battery_id = b.id), 0) AS total_usage_count
+      FROM batteries AS b
+      JOIN batteries_type AS bt ON b.battery_type_id = bt.id
+      ORDER BY 
+        CASE 
+          WHEN b.end_date IS NULL THEN 0 
+          ELSE 1 
+        END,
+        b.id;
   ''');
-
-    return result;
   }
 
   Future<List<Map<String, dynamic>>> getAllBatteriesWithDetails() async {
     final db = await database;
     return db.rawQuery('''
-    SELECT b.*, bt.*, bu.usage_count
-    FROM batteries AS b, batteries_type AS bt, usage AS bu
-    WHERE b.battery_type_id = bt.id
-    AND b.id = bu.battery_id
-    ORDER BY b.id
+      SELECT b.*, bt.*, SUM(bu.usage_count) AS total_usage_count
+      FROM batteries AS b, batteries_type AS bt, usage AS bu
+      WHERE b.battery_type_id = bt.id
+        AND b.id = bu.battery_id
+        ORDER BY b.id
   ''');
   }
 
@@ -373,7 +372,7 @@ class DatabaseHelper {
   }
 
   // battery resistance
-  Future<List<Map<String, dynamic>>> getAllBatteryResistances() async {
+  Future<List<Map<String, dynamic>>> getAllResistances() async {
     final db = await database;
     return await db.query('battery_resistance ');
   }
@@ -394,10 +393,10 @@ class DatabaseHelper {
     return await db.insert('battery_resistance', resistanceData);
   }
 
-  Future<List<Map<String, dynamic>>> getInternalResistancesForBattery(
+  Future<List<Map<String, dynamic>>> getResistancesForBattery(
       int batteryId) async {
     final db = await database;
-    return await db.query(
+    return db.query(
       'battery_resistance',
       where: 'battery_id = ?',
       whereArgs: [batteryId],
@@ -426,9 +425,25 @@ class DatabaseHelper {
     });
   }
 
-  Future<List<Map<String, dynamic>>> getReports(int batteryId) async {
+  Future<List<Map<String, dynamic>>> getReportsForBattery(int batteryId) async {
     final db = await database;
-    return db.query('reports', where: 'battery_id = ?', whereArgs: [batteryId]);
+    return db.query(
+      'reports',
+      where: 'battery_id = ?',
+      whereArgs: [batteryId],
+      orderBy:
+          'report_date DESC',
+    );
+  }
+
+  Future<void> fixReport(int reportId) async {
+    final db = await database;
+    await db.update(
+      'reports',
+      {'resolved': 1},
+      where: 'id = ?',
+      whereArgs: [reportId],
+    );
   }
 
   Future<void> deleteReport(int reportId) async {
@@ -446,9 +461,15 @@ class DatabaseHelper {
     });
   }
 
-  Future<List<Map<String, dynamic>>> getUsageForItem(int batteryId) async {
+  Future<List<Map<String, dynamic>>> getUsageForBattery(int batteryId) async {
     final db = await database;
-    return db.query('usage', where: 'battery_id = ?', whereArgs: [batteryId]);
+    return db.query(
+      'usage',
+      where: 'battery_id = ?',
+      whereArgs: [batteryId],
+      orderBy:
+          'usage_date DESC',
+    );
   }
 
   Future<void> deleteUsage(int usageId) async {

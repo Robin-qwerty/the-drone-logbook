@@ -1,5 +1,7 @@
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'battery_addresistance_screen.dart';
 import 'battery_addreport_screen.dart';
 import 'battery_addusage_screen.dart';
 import '../database_helper.dart';
@@ -43,10 +45,10 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
   List<Map<String, dynamic>> _resistances = [];
 
   Future<void> _loadReportsResistanceUsage() async {
-    final reports = await _dbHelper.getReports(widget.battery['id']);
-    final usage = await _dbHelper.getUsageForItem(widget.battery['id']);
+    final reports = await _dbHelper.getReportsForBattery(widget.battery['id']);
+    final usage = await _dbHelper.getUsageForBattery(widget.battery['id']);
     final resistances =
-        await _dbHelper.getInternalResistancesForBattery(widget.battery['id']);
+        await _dbHelper.getResistancesForBattery(widget.battery['id']);
     setState(() {
       _reports = reports;
       _usage = usage;
@@ -110,23 +112,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
   void _navigateToAddResistance(BuildContext context) {
     final cellCount = widget.battery['cell_count'] ?? 0;
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add Battery Resistance'),
-          content: ResistanceForm(
-            cellCount: cellCount,
-            batteryId: widget.battery['id'],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddResistanceScreen(
+          batteryId: widget.battery['id'],
+          cellCount: cellCount,
+        ),
+      ),
     ).then((_) {
       _loadReportsResistanceUsage();
       _showSnackbar('Resistance added successfully!');
@@ -152,7 +145,7 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Confirm Delete'),
+          title: const Text('Confirm'),
           content: Text(message),
           actions: [
             TextButton(
@@ -161,7 +154,7 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
+              child: const Text('Yes'),
             ),
           ],
         );
@@ -203,9 +196,43 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
             ),
             const Divider(),
 
-            Text(
-              'Name/Number: ${widget.battery['number'] ?? 'Unknown'}',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 400) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Name/Number: ${widget.battery['number'] ?? 'Unknown'}',
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Total cycles: ${widget.battery['total_usage_count'] ?? 0}',
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  );
+                } else {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Name/Number: ${widget.battery['number'] ?? 'Unknown'}',
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Total cycles: ${widget.battery['total_usage_count'] ?? 0}',
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
             const SizedBox(height: 16),
 
@@ -280,28 +307,60 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
 
             // Conditionally Render Buttons
             if (_isNotWrittenOff)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => _navigateToAddReport(context),
-                    style:
-                        ElevatedButton.styleFrom(foregroundColor: Colors.black),
-                    child: const Text('Add Report'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => _navigateToAddResistance(context),
-                    style:
-                        ElevatedButton.styleFrom(foregroundColor: Colors.black),
-                    child: const Text('Add Resistance'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => _navigateToAddUsage(context),
-                    style:
-                        ElevatedButton.styleFrom(foregroundColor: Colors.black),
-                    child: const Text('Add Cycle'),
-                  ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  bool isSmallScreen = constraints.maxWidth < 400;
+                  return isSmallScreen
+                      ? Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () => _navigateToAddReport(context),
+                              style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.black),
+                              child: const Text('Add Report'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () =>
+                                  _navigateToAddResistance(context),
+                              style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.black),
+                              child: const Text('Add Resistance'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => _navigateToAddUsage(context),
+                              style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.black),
+                              child: const Text('Add Cycle'),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () => _navigateToAddReport(context),
+                              style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.black),
+                              child: const Text('Add Report'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () =>
+                                  _navigateToAddResistance(context),
+                              style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.black),
+                              child: const Text('Add Resistance'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => _navigateToAddUsage(context),
+                              style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.black),
+                              child: const Text('Add Cycle'),
+                            ),
+                          ],
+                        );
+                },
               )
             else
               const Text(
@@ -332,17 +391,58 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
               const Text('No cycles records available.')
             else
               ..._usage.take(_showAllUsage ? _usage.length : 2).map((usage) {
-                return ListTile(
-                  title: Text('Cycle Count: ${usage['usage_count']}'),
-                  subtitle: Text('Date: ${_formatDate(usage['usage_date'])}'),
-                  onTap: () => _confirmAndDelete(
-                    context,
-                    'Are you sure you want to delete this usage record?',
-                    () async {
-                      await _dbHelper.deleteUsage(usage['id']);
-                      await _loadReportsResistanceUsage();
-                      _showSnackbar('Usage deleted successfully!');
-                    },
+                return Slidable(
+                  startActionPane: ActionPane(
+                    motion: const DrawerMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: _isNotWrittenOff
+                            ? (context) {
+                                _confirmAndDelete(
+                                  context,
+                                  'Are you sure you want to delete this usage record?',
+                                  () async {
+                                    await _dbHelper.deleteUsage(usage['id']);
+                                    await _loadReportsResistanceUsage();
+                                    _showSnackbar(
+                                        'Usage deleted successfully!');
+                                  },
+                                );
+                              }
+                            : null,
+                        backgroundColor: Colors.red,
+                        icon: Icons.delete,
+                        label: 'Delete',
+                      ),
+                    ],
+                  ),
+                  endActionPane: ActionPane(
+                    motion: const DrawerMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: _isNotWrittenOff
+                            ? (context) {
+                                _confirmAndDelete(
+                                  context,
+                                  'Are you sure you want to delete this usage record?',
+                                  () async {
+                                    await _dbHelper.deleteUsage(usage['id']);
+                                    await _loadReportsResistanceUsage();
+                                    _showSnackbar(
+                                        'Usage deleted successfully!');
+                                  },
+                                );
+                              }
+                            : null,
+                        backgroundColor: Colors.red,
+                        icon: Icons.delete,
+                        label: 'Delete',
+                      ),
+                    ],
+                  ),
+                  child: ListTile(
+                    title: Text('Cycle Count: ${usage['usage_count']}'),
+                    subtitle: Text('Date: ${_formatDate(usage['usage_date'])}'),
                   ),
                 );
               }),
@@ -372,35 +472,88 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
             else
               ..._resistances
                   .take(_showAllResistance ? _resistances.length : 2)
-                  .map((resistance) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (int i = 1; i <= widget.battery['cell_count']; i++)
-                      if (resistance['resistance_c$i'] != null)
-                        Text(
-                          'S$i: ${resistance['resistance_c$i']} mΩ',
-                          style: const TextStyle(fontSize: 16),
+                  .map(
+                (resistance) {
+                  return Slidable(
+                    startActionPane: ActionPane(
+                      motion: const DrawerMotion(),
+                      children: [
+                        SlidableAction(
+                          onPressed: _isNotWrittenOff
+                              ? (context) {
+                                  _confirmAndDelete(
+                                    context,
+                                    'Are you sure you want to delete this resistance record?',
+                                    () async {
+                                      await _dbHelper
+                                          .deleteResistance(resistance['id']);
+                                      await _loadReportsResistanceUsage();
+                                      _showSnackbar(
+                                          'Resistance deleted successfully!');
+                                    },
+                                  );
+                                }
+                              : null,
+                          backgroundColor: Colors.red,
+                          icon: Icons.delete,
+                          label: 'Delete',
                         ),
-                    Text(
-                      'Date: ${_formatDate(resistance['date'])}',
-                      style: const TextStyle(color: Colors.grey),
+                      ],
                     ),
-                    GestureDetector(
-                      onTap: () => _confirmAndDelete(
-                        context,
-                        'Are you sure you want to delete this resistance record?',
-                        () async {
-                          await _dbHelper.deleteResistance(resistance['id']);
-                          await _loadReportsResistanceUsage();
-                          _showSnackbar('Resistance deleted successfully!');
-                        },
+                    endActionPane: ActionPane(
+                      motion: const DrawerMotion(),
+                      children: [
+                        SlidableAction(
+                          onPressed: _isNotWrittenOff
+                              ? (context) {
+                                  _confirmAndDelete(
+                                    context,
+                                    'Are you sure you want to delete this resistance record?',
+                                    () async {
+                                      await _dbHelper
+                                          .deleteResistance(resistance['id']);
+                                      await _loadReportsResistanceUsage();
+                                      _showSnackbar(
+                                          'Resistance deleted successfully!');
+                                    },
+                                  );
+                                }
+                              : null,
+                          backgroundColor: Colors.red,
+                          icon: Icons.delete,
+                          label: 'Delete',
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 16.0,
+                            runSpacing: 8.0,
+                            children: [
+                              for (int i = 1;
+                                  i <= widget.battery['cell_count'];
+                                  i++)
+                                if (resistance['resistance_c$i'] != null)
+                                  Text(
+                                    'C$i: ${resistance['resistance_c$i']} mΩ',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                            ],
+                          ),
+                          Text(
+                            'Date: ${_formatDate(resistance['date'])}',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
                       ),
-                      child: const Icon(Icons.delete, color: Colors.red),
                     ),
-                  ],
-                );
-              }),
+                  );
+                },
+              ),
 
             const Divider(),
 
@@ -428,17 +581,104 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
               ..._reports
                   .take(_showAllReports ? _reports.length : 2)
                   .map((report) {
-                return ListTile(
-                  title: Text(report['report_text']),
-                  subtitle: Text('Date: ${_formatDate(report['report_date'])}'),
-                  onTap: () => _confirmAndDelete(
-                    context,
-                    'Are you sure you want to delete this report?',
-                    () async {
-                      await _dbHelper.deleteReport(report['id']);
-                      await _loadReportsResistanceUsage();
-                      _showSnackbar('Report deleted successfully!');
-                    },
+                final bool isResolved = report['resolved'] == 1;
+
+                return Slidable(
+                  startActionPane: ActionPane(
+                    motion: const DrawerMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: _isNotWrittenOff
+                            ? (context) {
+                                _confirmAndDelete(
+                                  context,
+                                  'Are you sure you want to delete this report?',
+                                  () async {
+                                    await _dbHelper.deleteReport(report['id']);
+                                    await _loadReportsResistanceUsage();
+                                    _showSnackbar(
+                                        'Report deleted successfully!');
+                                  },
+                                );
+                              }
+                            : null,
+                        backgroundColor: Colors.red,
+                        icon: Icons.delete,
+                        label: 'Delete',
+                      ),
+                      if (!isResolved)
+                        SlidableAction(
+                          onPressed: _isNotWrittenOff
+                              ? (context) {
+                                  _confirmAndDelete(
+                                    context,
+                                    'Are you sure you want to mark this report as resolved/fixed?',
+                                    () async {
+                                      await _dbHelper.fixReport(report['id']);
+                                      await _loadReportsResistanceUsage();
+                                      _showSnackbar(
+                                          'Report marked as resolved/fixed successfully!');
+                                    },
+                                  );
+                                }
+                              : null,
+                          backgroundColor: Colors.yellow,
+                          icon: Icons.miscellaneous_services,
+                          label: 'Resolve',
+                        ),
+                    ],
+                  ),
+                  endActionPane: ActionPane(
+                    motion: const DrawerMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: _isNotWrittenOff
+                            ? (context) {
+                                _confirmAndDelete(
+                                  context,
+                                  'Are you sure you want to delete this report?',
+                                  () async {
+                                    await _dbHelper.deleteReport(report['id']);
+                                    await _loadReportsResistanceUsage();
+                                    _showSnackbar(
+                                        'Report deleted successfully!');
+                                  },
+                                );
+                              }
+                            : null,
+                        backgroundColor: Colors.red,
+                        icon: Icons.delete,
+                        label: 'Delete',
+                      ),
+                      if (!isResolved)
+                        SlidableAction(
+                          onPressed: _isNotWrittenOff
+                              ? (context) {
+                                  _confirmAndDelete(
+                                    context,
+                                    'Are you sure you want to mark this report as resolved/fixed?',
+                                    () async {
+                                      await _dbHelper.fixReport(report['id']);
+                                      await _loadReportsResistanceUsage();
+                                      _showSnackbar(
+                                          'Report marked as resolved/fixed successfully!');
+                                    },
+                                  );
+                                }
+                              : null,
+                          backgroundColor: Colors.yellow,
+                          icon: Icons.miscellaneous_services,
+                          label: 'Resolve',
+                        ),
+                    ],
+                  ),
+                  child: ListTile(
+                    title: Text(report['report_text']),
+                    subtitle:
+                        Text('Date: ${_formatDate(report['report_date'])}'),
+                    trailing: isResolved
+                        ? const Icon(Icons.check_outlined, color: Colors.green)
+                        : null,
                   ),
                 );
               }),
@@ -446,79 +686,18 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen> {
             const Divider(),
 
             const SizedBox(height: 8),
+            if (_isNotWrittenOff)
+              const Text(
+                'Swipe left or right to perform actions like deleting on the cycles, resistance or reports.',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class ResistanceForm extends StatefulWidget {
-  final int cellCount;
-  final int batteryId;
-
-  const ResistanceForm(
-      {super.key, required this.cellCount, required this.batteryId});
-
-  @override
-  _ResistanceFormState createState() => _ResistanceFormState();
-}
-
-class _ResistanceFormState extends State<ResistanceForm> {
-  late List<TextEditingController> controllers;
-
-  @override
-  void initState() {
-    super.initState();
-    controllers = List.generate(
-      widget.cellCount,
-      (_) => TextEditingController(),
-    );
-  }
-
-  @override
-  void dispose() {
-    for (var controller in controllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  void _saveResistance() async {
-    final resistances = {
-      for (int i = 0; i < controllers.length; i++)
-        'resistance_c${i + 1}': double.tryParse(controllers[i].text) ?? 0.0,
-    };
-
-    await DatabaseHelper().addInternalResistance(
-      batteryId: widget.batteryId,
-      resistances: resistances,
-    );
-
-    Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ...List.generate(widget.cellCount, (index) {
-            return TextField(
-              controller: controllers[index],
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Cell ${index + 1} Resistance (mΩ)',
-              ),
-            );
-          }),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _saveResistance,
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }
