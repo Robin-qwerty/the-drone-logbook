@@ -1,10 +1,13 @@
+// ignore_for_file: avoid_print
+
 import 'batteries/battery_list_screen.dart';
+import 'drones/drone_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
 import 'home_screen.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -17,7 +20,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MainScreen(),
+      home: const MainScreen(),
     );
   }
 }
@@ -35,7 +38,7 @@ class _MainScreenState extends State<MainScreen> {
   Map<String, int> _settings = {
     'batteries_enabled': 0,
     'drones_enabled': 0,
-    'expenses_enabled': 0,
+    'inventory_enabled': 0,
   };
 
   List<Widget> _screens = [];
@@ -61,7 +64,7 @@ class _MainScreenState extends State<MainScreen> {
     final batteryResistance = await _dbHelper.getAllResistances();
     final reports = await _dbHelper.getAllReports();
     final usage = await _dbHelper.getAllUsage();
-    final expenses = await _dbHelper.getAllExpenses();
+    final inventory = await _dbHelper.getAllInventory();
     final drones = await _dbHelper.getAllDrones();
     final settings = await _dbHelper.getAllSettings();
 
@@ -85,8 +88,8 @@ class _MainScreenState extends State<MainScreen> {
       print(entry);
     }
 
-    print('\nExpenses:');
-    for (var entry in expenses) {
+    print('\nInventory:');
+    for (var entry in inventory) {
       print(entry);
     }
 
@@ -108,8 +111,8 @@ class _MainScreenState extends State<MainScreen> {
       _screens = [
         const HomeScreen(),
         if (settings['batteries_enabled'] == 1) const BatteryListScreen(),
-        if (settings['drones_enabled'] == 1) const DronesScreen(),
-        if (settings['expenses_enabled'] == 1) const ExpensesScreen(),
+        if (settings['drones_enabled'] == 1) const DroneListScreen(),
+        if (settings['inventory_enabled'] == 1) const InventoryScreen(),
       ];
 
       _bottomNavItems = [
@@ -127,7 +130,7 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.flight),
             label: 'Drones',
           ),
-        if (settings['expenses_enabled'] == 1)
+        if (settings['inventory_enabled'] == 1)
           const BottomNavigationBarItem(
             icon: Icon(Icons.inventory),
             label: 'Inventory',
@@ -151,12 +154,12 @@ class _MainScreenState extends State<MainScreen> {
         title: const Text('The Drone Logbook'),
       ),
       body: allSettingsDisabled
-          ? const HomeScreen() // Show HomeScreen without BottomNavigationBar
+          ? const HomeScreen()
           : (_screens.isNotEmpty
               ? _screens[_selectedIndex]
               : const Center(child: CircularProgressIndicator())),
       bottomNavigationBar: allSettingsDisabled
-          ? null // Hide bottom navigation bar if all settings are disabled
+          ? null
           : BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
               currentIndex: _selectedIndex,
@@ -178,28 +181,14 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class DronesScreen extends StatelessWidget {
-  const DronesScreen({super.key});
+class InventoryScreen extends StatelessWidget {
+  const InventoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const Center(
       child: Text(
-        'Drones list Screen (to be implemented)',
-        style: TextStyle(fontSize: 18),
-      ),
-    );
-  }
-}
-
-class ExpensesScreen extends StatelessWidget {
-  const ExpensesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Expenses list Screen (to be implemented)',
+        'Inventory list Screen (to be implemented)',
         style: TextStyle(fontSize: 18),
       ),
     );

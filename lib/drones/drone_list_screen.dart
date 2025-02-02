@@ -1,61 +1,61 @@
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/material.dart';
 import '../database_helper.dart';
-import 'battery_detail_screen.dart';
-import 'battery_add_screen.dart';
-import 'battery_edit_screen.dart';
+import 'drone_detail_screen.dart';
+import 'drone_add_screen.dart';
+import 'drone_edit_screen.dart';
 
-class BatteryListScreen extends StatefulWidget {
-  const BatteryListScreen({super.key});
+class DroneListScreen extends StatefulWidget {
+  const DroneListScreen({super.key});
 
   @override
-  _BatteryListScreenState createState() => _BatteryListScreenState();
+  _DroneListScreenState createState() => _DroneListScreenState();
 }
 
-class _BatteryListScreenState extends State<BatteryListScreen> {
+class _DroneListScreenState extends State<DroneListScreen> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  List<Map<String, dynamic>> _batteries = [];
+  List<Map<String, dynamic>> _drones = [];
 
   @override
   void initState() {
     super.initState();
-    _loadBatteries();
+    _loadDrones();
   }
 
-  Future<void> _loadBatteries() async {
-    final batteries = await _dbHelper.getAllBatteries();
+  Future<void> _loadDrones() async {
+    final drones = await _dbHelper.getAllDrones();
     setState(() {
-      _batteries = batteries;
+      _drones = drones;
     });
   }
 
-  void _navigateToAddBattery() async {
+  void _navigateToAddDrone() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const BatteryFormScreen()),
+      MaterialPageRoute(builder: (context) => const DroneFormScreen()),
     );
     if (result == true) {
-      _loadBatteries();
+      _loadDrones();
     }
   }
 
-  void _navigateToEditBattery(Map<String, dynamic> battery) async {
+  void _navigateToEditDrone(Map<String, dynamic> drone) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) => BatteryEditScreen(battery: battery)),
+          builder: (context) => DroneEditScreen(drone: drone)),
     );
     if (result == true) {
-      _loadBatteries();
+      _loadDrones();
     }
   }
 
-  void _deleteBattery(int batteryId) async {
+  void _deleteDrone(int droneId) async {
     final confirmed = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: const Text('Are you sure you want to delete this battery?'),
+        content: const Text('Are you sure you want to delete this drone?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -70,40 +70,38 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
     );
 
     if (confirmed == true) {
-      await _dbHelper.deleteBattery(batteryId);
-      _loadBatteries();
+      await _dbHelper.deleteDrone(droneId);
+      _loadDrones();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Your batteries')),
-      body: _batteries.isEmpty
-          ? const Center(child: Text('No batteries found.'))
+      appBar: AppBar(title: const Text('Your Drones')),
+      body: _drones.isEmpty
+          ? const Center(child: Text('No drones found.'))
           : Column(
               children: [
                 Expanded(
                   child: ListView.builder(
-                    itemCount: _batteries.length,
+                    itemCount: _drones.length,
                     itemBuilder: (context, index) {
-                      final battery = _batteries[index];
+                      final drone = _drones[index];
                       return Slidable(
                         startActionPane: ActionPane(
                           motion: const DrawerMotion(),
                           children: [
-                            if (battery['end_date'] == null ||
-                                battery['end_date'].isEmpty)
-                              SlidableAction(
-                                onPressed: (context) =>
-                                    _navigateToEditBattery(battery),
-                                backgroundColor: Colors.blue,
-                                icon: Icons.edit,
-                                label: 'Edit',
-                              ),
                             SlidableAction(
                               onPressed: (context) =>
-                                  _deleteBattery(battery['id']),
+                                  _navigateToEditDrone(drone),
+                              backgroundColor: Colors.blue,
+                              icon: Icons.edit,
+                              label: 'Edit',
+                            ),
+                            SlidableAction(
+                              onPressed: (context) =>
+                                  _deleteDrone(drone['id']),
                               backgroundColor: Colors.red,
                               icon: Icons.delete,
                               label: 'Delete',
@@ -113,18 +111,16 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
                         endActionPane: ActionPane(
                           motion: const DrawerMotion(),
                           children: [
-                            if (battery['end_date'] == null ||
-                                battery['end_date'].isEmpty)
-                              SlidableAction(
-                                onPressed: (context) =>
-                                    _navigateToEditBattery(battery),
-                                backgroundColor: Colors.blue,
-                                icon: Icons.edit,
-                                label: 'Edit',
-                              ),
                             SlidableAction(
                               onPressed: (context) =>
-                                  _deleteBattery(battery['id']),
+                                  _navigateToEditDrone(drone),
+                              backgroundColor: Colors.blue,
+                              icon: Icons.edit,
+                              label: 'Edit',
+                            ),
+                            SlidableAction(
+                              onPressed: (context) =>
+                                  _deleteDrone(drone['id']),
                               backgroundColor: Colors.red,
                               icon: Icons.delete,
                               label: 'Delete',
@@ -133,17 +129,17 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
                         ),
                         child: ListTile(
                           title: Text(
-                            '(${battery['id']}) - ${battery['number'] ?? 'Unknown'}',
+                            '(${drone['id']}) - ${drone['name'] ?? 'Unknown'}',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
-                            'Type: ${battery['type']} - Capacity: ${battery['capacity']} mAh - total cycles: ${battery['total_usage_count']}',
+                            'Frame: ${drone['frame']} - Motors: ${drone['motors']} - Weight: ${drone['weight']}g',
                           ),
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  BatteryDetailScreen(battery: battery),
+                                  DroneDetailScreen(drone: drone),
                             ),
                           ),
                         ),
@@ -154,7 +150,7 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
                 const Padding(
                   padding: EdgeInsets.all(8.0),
                   child: Text(
-                    'Swipe left or right to edit or delete a battery.',
+                    'Swipe left or right to edit or delete a drone.',
                     style: TextStyle(
                         fontStyle: FontStyle.italic, color: Colors.grey),
                     textAlign: TextAlign.center,
@@ -163,8 +159,8 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
               ],
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToAddBattery,
-        tooltip: 'Add Battery',
+        onPressed: _navigateToAddDrone,
+        tooltip: 'Add Drone',
         child: const Icon(Icons.add),
       ),
     );

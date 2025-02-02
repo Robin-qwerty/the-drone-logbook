@@ -2,35 +2,33 @@ import 'package:flutter/material.dart';
 import '../database_helper.dart';
 import 'package:intl/intl.dart';
 
-class BatteryAddReportScreen extends StatefulWidget {
-  final int batteryId;
+class DroneAddReportScreen extends StatefulWidget {
+  final int droneId;
 
-  const BatteryAddReportScreen({super.key, required this.batteryId});
+  const DroneAddReportScreen({super.key, required this.droneId});
 
   @override
-  _BatteryAddReportScreenState createState() => _BatteryAddReportScreenState();
+  _DroneAddReportScreenState createState() => _DroneAddReportScreenState();
 }
 
-class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
+class _DroneAddReportScreenState extends State<DroneAddReportScreen> {
   final _reportController = TextEditingController();
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
-  // List of default report options
+  // List of default report options for drones
   final List<String> _defaultReports = [
-    'Battery under 3.0V',
-    'Battery under 2.5V',
-    'Battery over 4.2V',
-    'Battery overheating',
-    'Battery swelling',
-    'Battery dent',
-    'Battery involved in a crash(without damage)',
-    'Battery involved in a crash(with damage)',
-    'Battery connector damaged',
+    'Drone battery malfunction',
+    'Drone motor failure',
+    'Drone collision damage',
+    'Drone GPS malfunction',
+    'Drone overheating',
+    'Drone signal loss',
+    'Drone crash',
   ];
 
   String? _selectedReport;
-  bool _isCustomReport = false;
-  DateTime _reportDate = DateTime.now();
+  bool _isCustomReport = false; // Flag to toggle custom report
+  DateTime _reportDate = DateTime.now(); // Default date is today's date
 
   @override
   void dispose() {
@@ -49,11 +47,13 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
       return;
     }
 
-    await _dbHelper.insertReport(widget.batteryId, reportText, _reportDate);
+    // Insert the report into the database
+    await _dbHelper.insertDroneReport(widget.droneId, reportText, _reportDate);
 
     Navigator.pop(context);
   }
 
+  // Format the date to display
   String _formatDate(DateTime date) {
     return DateFormat('yyyy-MM-dd').format(date);
   }
@@ -61,12 +61,14 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Report')),
+      appBar: AppBar(title: const Text('Add Drone Report')),
       body: SingleChildScrollView(
+        // Wrap the body in a scrollable view
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Dropdown for selecting a predefined report
             DropdownButton<String>(
               hint: const Text('Select a report type'),
               value: _selectedReport,
@@ -74,8 +76,8 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
                 setState(() {
                   _selectedReport = newReport;
                   _isCustomReport =
-                      false;
-                  _reportController.clear();
+                      false; // Switch off custom report if a default is selected
+                  _reportController.clear(); // Clear the custom report text
                 });
               },
               items: _defaultReports.map((String report) {
@@ -87,6 +89,7 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Option for custom report
             Row(
               children: [
                 Checkbox(
@@ -95,9 +98,9 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
                     setState(() {
                       _isCustomReport = newValue!;
                       _selectedReport =
-                          null;
+                          null; // Reset selected report when switching to custom
                       _reportController
-                          .clear();
+                          .clear(); // Clear the predefined selection if custom is selected
                     });
                   },
                 ),
@@ -118,6 +121,7 @@ class _BatteryAddReportScreenState extends State<BatteryAddReportScreen> {
             ],
             const SizedBox(height: 20),
 
+            // Date Picker for selecting the report date
             Row(
               children: [
                 Text(

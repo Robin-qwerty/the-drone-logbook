@@ -22,12 +22,10 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
     super.dispose();
   }
 
-  // Format the date to display
   String _formatDate(DateTime date) {
     return DateFormat('yyyy-MM-dd').format(date);
   }
 
-  // Save the usage for the selected battery
   Future<void> _addUsage() async {
     if (_usageController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -45,7 +43,6 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
       return;
     }
 
-    // Use the batteryId passed into the widget
     await _dbHelper.insertUsage(
       widget.batteryId,
       _formatDate(_usageDate),
@@ -61,12 +58,10 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Add Battery cycle/Usage')),
       body: SingleChildScrollView(
-        // Wrap the body in a scrollable view
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Usage Count Field
             TextField(
               controller: _usageController,
               keyboardType: TextInputType.number,
@@ -77,7 +72,6 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Date Picker for Usage Date
             Row(
               children: [
                 Text(
@@ -104,7 +98,6 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Add Usage Button
             ElevatedButton(
               onPressed: _addUsage,
               child: const Text('Add cycle/Usage'),

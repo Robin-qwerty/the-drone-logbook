@@ -49,16 +49,11 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
       final selectedType = _batteryTypes
           .firstWhere((type) => type['id'] == _selectedBatteryTypeId);
 
-      // Calculating storage_watt and full_watt
       final cellCount = int.parse(_cellCountController.text);
       final capacity = double.parse(_capacityController.text);
-      // final storageVoltage = selectedType['storage_voltage'];
       final maxVoltage = selectedType['max_voltage'];
-
       final storageWatt = (cellCount * capacity * maxVoltage) / 1000 / 2; // Wh
       final fullWatt = (cellCount * capacity * maxVoltage) / 1000; // Wh
-
-      // Ensure buyDate and endDate are not null and properly formatted
       final formattedBuyDate = _buyDate?.toIso8601String() ?? '';
 
       await _dbHelper.insertBattery({
@@ -73,7 +68,7 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
         'full_watt': double.parse(fullWatt.toStringAsFixed(2)),
       });
 
-      _showSnackbar('Battery has added successfully!');
+      _showSnackbar('Battery added successfully!');
       Navigator.pop(context, true);
     }
   }

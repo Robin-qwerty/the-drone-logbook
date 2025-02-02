@@ -62,6 +62,10 @@ class _BatteryEditScreenState extends State<BatteryEditScreen> {
         formattedBuyDate,
         cellCount,
       );
+      const SnackBar(
+        content: Text('Battery edit successfully!'),
+        duration: Duration(seconds: 2),
+      );
       Navigator.pop(context, true);
     }
   }
@@ -71,7 +75,6 @@ class _BatteryEditScreenState extends State<BatteryEditScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Battery')),
       body: SingleChildScrollView(
-        // Wrap the body with SingleChildScrollView
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,

@@ -1,13 +1,13 @@
 # The Drone Logbook
 
-The Drone Logbook is an Android-only app designed for tracking drone battery usage to monitor battery health over time. In addition, the app supports logging drone flights, tracking which drones and batteries were used, and managing an inventory of drone-related expenses, parts, and items.
+The Drone Logbook is an Android-only app designed for tracking drone battery usage to monitor battery health over time. In addition, the app supports logging drone flights, tracking which drones and batteries were used, and managing an inventory of drone-related (expenses), parts, and items.
 
 This project is a hobby app built for a small community of drone enthusiasts.
 
 ## Features
 - Track battery usage and monitor health.
 - Log drone flights with battery and drone details.
-- Manage an inventory for drone-related parts, items, and expenses.
+- Manage an inventory for drone-related parts, items, and to track expenses.
 - Simple and user-friendly interface.
 
 ## Installation

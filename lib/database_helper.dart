@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:sqflite/sqflite.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart';
@@ -19,14 +21,14 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
-    // final path = join(dbPath, 'battery.db');
 
     // Uncomment the next line to clear the database during development
+    // final path = join(dbPath, 'battery.db');
     // await _deleteDatabase(path);
 
     return openDatabase(
       join(dbPath, 'battery.db'),
-      version: 5,
+      version: 10,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE batteries_type (
@@ -90,6 +92,7 @@ class DatabaseHelper {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             battery_id INTEGER,
             drone_id TEXT,
+            flight_time_minutes INTEGER DEFAULT 0,
             usage_date DATE DEFAULT (DATE('now')),
             usage_count INTEGER NOT NULL DEFAULT 1
           )
@@ -102,7 +105,7 @@ class DatabaseHelper {
             firsttimebattery INTERGER NOT NULL DEFAULT 0,
             batteries_enabled INTEGER NOT NULL DEFAULT 0,
             drones_enabled INTEGER NOT NULL DEFAULT 0,
-            expenses_enabled INTEGER NOT NULL DEFAULT 0
+            inventory_enabled INTEGER NOT NULL DEFAULT 0
           )
         ''');
 
@@ -112,19 +115,22 @@ class DatabaseHelper {
             name TEXT NOT NULL,
             description TEXT,
             frame TEXT,
-            vtx TEXT,
+            esc TEXT,
             fc TEXT,
+            vtx TEXT,
+            antenna TEXT,
+            receiver TEXT,
             motors TEXT,
             camera TEXT,
             props TEXT,
-            esc TEXT,
-            battery_id INTEGER,
-            FOREIGN KEY (battery_id) REFERENCES batteries (id) ON DELETE SET NULL
+            buzzer TEXT,
+            weight TEXT,
+            purchase_date DATE DEFAULT (DATE('now'))
           )
         ''');
 
         await db.execute('''
-          CREATE TABLE expenses (
+          CREATE TABLE inventory (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             description TEXT,
@@ -134,14 +140,53 @@ class DatabaseHelper {
             buy_date DATE NOT NULL
           )
         ''');
+
         await _insertDefaultData(db);
       },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 5) {
-          await db.execute(
-              'ALTER TABLE reports ADD COLUMN resolved INTEGER DEFAULT 0');
-        }
-      },
+      // onUpgrade: (db, oldVersion, newVersion) async {
+      // if (oldVersion < 8) {
+      //   print('DATABASE WAS UPGRADED!!!!!!');
+      //   print('DATABASE WAS UPGRADED!!!!!!');
+
+      //   await db.execute(
+      //       'ALTER TABLE usage ADD COLUMN flight_time_minutes INTEGER DEFAULT 0');
+      // }
+
+      // if (oldVersion < 9) {
+      //   print('DATABASE WAS UPGRADED!!!!!!');
+      //   print('DATABASE WAS UPGRADED!!!!!!');
+
+      //   await db.execute('DROP TABLE IF EXISTS expenses');
+
+      //   await db.execute('''
+      //     CREATE TABLE inventory (
+      //       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      //       name TEXT NOT NULL,
+      //       description TEXT,
+      //       link TEXT,
+      //       price REAL NOT NULL,
+      //       count INTEGER NOT NULL DEFAULT 1,
+      //       buy_date DATE NOT NULL
+      //     )
+      //   ''');
+      // }
+
+      // if (oldVersion < 11) {
+      //   print('DATABASE WAS UPGRADED!!!!!!');
+      //   print('DATABASE WAS UPGRADED!!!!!!');
+
+      //   await db.delete('settings');
+
+      //   await db.insert('settings', {
+      //     'id': 1,
+      //     'firsttime': 1,
+      //     'firsttimebattery': 1,
+      //     'batteries_enabled': 1,
+      //     'drones_enabled': 0,
+      //     'inventory_enabled': 0,
+      //   });
+      // }
+      // },
     );
   }
 
@@ -191,7 +236,7 @@ class DatabaseHelper {
       'firsttimebattery': 1,
       'batteries_enabled': 1,
       'drones_enabled': 0,
-      'expenses_enabled': 0,
+      'inventory_enabled': 0,
     });
   }
 
@@ -203,13 +248,13 @@ class DatabaseHelper {
       return {
         'batteries_enabled': results[0]['batteries_enabled'],
         'drones_enabled': results[0]['drones_enabled'],
-        'expenses_enabled': results[0]['expenses_enabled'],
+        'inventory_enabled': results[0]['inventory_enabled'],
       };
     }
     return {
       'batteries_enabled': 0,
       'drones_enabled': 0,
-      'expenses_enabled': 0,
+      'inventory_enabled': 0,
     };
   }
 
@@ -230,7 +275,7 @@ class DatabaseHelper {
       'Battery Resistance': await getAllResistances(),
       'Reports': await getAllReports(),
       'Usage': await getAllUsage(),
-      'Expenses': await getAllExpenses(),
+      'Inventory': await getAllInventory(),
       'Drones': await getAllDrones(),
       'Settings': await getAllSettings(),
     };
@@ -239,19 +284,15 @@ class DatabaseHelper {
   Future<String> getDatabaseSQLDump() async {
     final db = await _initDatabase();
 
-    // Get the list of tables
     final tables = await db.rawQuery(
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';",
     );
 
-    // Initialize the SQL dump
     final StringBuffer dump = StringBuffer();
 
-    // Iterate through each table and get its schema and data
     for (final table in tables) {
       final tableName = table['name'];
 
-      // Get the CREATE TABLE statement
       final createTableResult = await db.rawQuery(
         "SELECT sql FROM sqlite_master WHERE type='table' AND name='$tableName';",
       );
@@ -259,7 +300,6 @@ class DatabaseHelper {
         dump.writeln('${createTableResult.first['sql']};');
       }
 
-      // Get the table data
       final data = await db.query(tableName as String);
 
       for (final row in data) {
@@ -322,17 +362,9 @@ class DatabaseHelper {
     int cellCount,
   ) async {
     final db = await database;
-
-    // Calculate derived values
     final fullWatt = cellCount * 4.2 * capacity / 1000;
     final storageWatt = cellCount * 3.8 * capacity / 1000;
 
-    // Log debug information
-    // print('Updating battery: $id');
-    // print(
-    // 'Values: number=$number, brand=$brand, batteryTypeId=$batteryTypeId, capacity=$capacity, buyDate=$buyDate, cellCount=$cellCount');
-
-    // Perform update
     await db.update(
       'batteries',
       {
@@ -415,7 +447,6 @@ class DatabaseHelper {
       int batteryId, String reportText, DateTime reportDate) async {
     final db = await database;
 
-    // Format the date to store in the database (e.g., 'yyyy-MM-dd')
     final formattedDate = DateFormat('yyyy-MM-dd').format(reportDate);
 
     return db.insert('reports', {
@@ -431,18 +462,27 @@ class DatabaseHelper {
       'reports',
       where: 'battery_id = ?',
       whereArgs: [batteryId],
-      orderBy:
-          'report_date DESC',
+      orderBy: 'report_date DESC',
     );
   }
 
-  Future<void> fixReport(int reportId) async {
+  Future<void> markReportResolved(int reportId) async {
     final db = await database;
     await db.update(
       'reports',
       {'resolved': 1},
       where: 'id = ?',
       whereArgs: [reportId],
+    );
+  }
+
+  Future<void> markReportUnresolved(int id) async {
+    final db = await database;
+    await db.update(
+      'reports',
+      {'resolved': 0},
+      where: 'id = ?',
+      whereArgs: [id],
     );
   }
 
@@ -467,14 +507,158 @@ class DatabaseHelper {
       'usage',
       where: 'battery_id = ?',
       whereArgs: [batteryId],
-      orderBy:
-          'usage_date DESC',
+      orderBy: 'usage_date DESC',
     );
   }
 
   Future<void> deleteUsage(int usageId) async {
     final db = await database;
     await db.delete('usage', where: 'id = ?', whereArgs: [usageId]);
+  }
+
+  //drones
+  Future<List<Map<String, dynamic>>> getDroneDetails(String droneId) async {
+    final db = await database;
+    return await db.query(
+      'drones',
+      where: 'id = ?',
+      whereArgs: [droneId],
+    );
+  }
+
+  Future<int> insertDrone(Map<String, dynamic> drone) async {
+    final db = await database;
+    return await db.insert(
+      'drones',
+      drone,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<int> updateDrone(
+      int id,
+      String name,
+      String description,
+      String frame,
+      String esc,
+      String fc,
+      String vtx,
+      String antenna,
+      String receiver,
+      String motors,
+      String camera,
+      String props,
+      String buzzer,
+      String weight) async {
+    final db = await database;
+    return await db.update(
+      'drones',
+      {
+        'name': name,
+        'description': description,
+        'frame': frame,
+        'esc': esc,
+        'fc': fc,
+        'vtx': vtx,
+        'antenna': antenna,
+        'receiver': receiver,
+        'motors': motors,
+        'camera': camera,
+        'props': props,
+        'buzzer': buzzer,
+        'weight': weight,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteDrone(int droneId) async {
+    final db = await database;
+    return await db.delete(
+      'drones',
+      where: 'id = ?',
+      whereArgs: [droneId],
+    );
+  }
+
+  //drone reports
+  Future<List<Map<String, dynamic>>> getReportsForDrone(int droneId) async {
+    final db = await database;
+    return await db.query(
+      'reports',
+      where: 'drone_id = ?',
+      whereArgs: [droneId],
+    );
+  }
+
+  Future<void> insertDroneReport(
+      int droneId, String reportText, DateTime reportDate) async {
+    final db = await database;
+    await db.insert('reports', {
+      'drone_id': droneId,
+      'report_text': reportText,
+      'report_date': reportDate.toIso8601String(),
+    });
+  }
+
+  // drone usages
+  Future<List<Map<String, dynamic>>> getFlightLogsForDrone(int droneId) async {
+    final db = await database;
+    return await db.query(
+      'usage',
+      where: 'drone_id = ?',
+      whereArgs: [droneId],
+    );
+  }
+
+  Future<void> insertFlightLog(int droneId, int batteryId, String usageDate,
+      String flightTime, int usageCount) async {
+    final db = await database;
+    await db.insert('usage', {
+      'drone_id': droneId,
+      'flight_time_minutes': flightTime,
+      'battery_id': batteryId,
+      'usage_date': usageDate,
+      'usage_count': usageCount,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getBatteries() async {
+    final db = await database;
+    return await db.query('batteries');
+  }
+
+  Future<Map<String, dynamic>?> getFlightLog(int logId) async {
+    final db = await database;
+    final result = await db.query(
+      'usage',
+      where: 'id = ?',
+      whereArgs: [logId],
+    );
+    if (result.isNotEmpty) {
+      return result.first;
+    }
+    return null;
+  }
+
+  Future<int> updateFlightLog(Map<String, dynamic> logData) async {
+    final db = await database;
+    return await db.update(
+      'usage',
+      logData,
+      where: 'id = ?',
+      whereArgs: [logData['id']],
+    );
+  }
+
+  Future<void> deleteFlightLog(int id) async {
+    final db = await database;
+    await db.delete(
+      'usage',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   // for debug database on run
@@ -503,8 +687,8 @@ class DatabaseHelper {
     return await db.query('drones');
   }
 
-  Future<List<Map<String, dynamic>>> getAllExpenses() async {
+  Future<List<Map<String, dynamic>>> getAllInventory() async {
     final db = await database;
-    return await db.query('expenses');
+    return await db.query('inventory');
   }
 }

@@ -13,7 +13,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, int> _settings = {
     'batteries_enabled': 0,
     'drones_enabled': 0,
-    'expenses_enabled': 0,
+    'inventory_enabled': 0,
   };
   bool _isSettingsExpanded = false;
 
@@ -43,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Text(
           'Settings saved successfully! Please restart the app for changes to take effect.',
         ),
+        duration: Duration(seconds: 10),
       ),
     );
   }
@@ -143,10 +144,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _toggleSetting('drones_enabled'),
                           ),
                           SwitchListTile(
-                            title: const Text('Enable Expenses'),
-                            value: _settings['expenses_enabled'] == 1,
+                            title: const Text('Enable Inventory'),
+                            value: _settings['inventory_enabled'] == 1,
                             onChanged: (value) =>
-                                _toggleSetting('expenses_enabled'),
+                                _toggleSetting('inventory_enabled'),
                           ),
                           const SizedBox(height: 10),
                           ElevatedButton(

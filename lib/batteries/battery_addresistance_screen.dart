@@ -33,17 +33,34 @@ class _AddResistanceScreenState extends State<AddResistanceScreen> {
   }
 
   void _saveResistance() async {
-    final resistances = {
-      for (int i = 0; i < controllers.length; i++)
-        'resistance_c${i + 1}': double.tryParse(controllers[i].text) ?? 0.0,
-    };
+    for (var controller in controllers) {
+      controller.text =
+          controller.text.replaceAll(',', '.'); // Replace comma with dot
+    }
+
+    final resistances = <String, double>{};
+
+    for (int i = 0; i < controllers.length; i++) {
+      String input = controllers[i].text;
+
+      if (input.isEmpty || !RegExp(r'^\d*\.?\d+$').hasMatch(input)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Invalid input in Resistance C${i + 1}. Only numbers and a dot are allowed.')),
+        );
+        return;
+      }
+
+      resistances['resistance_c${i + 1}'] = double.parse(input);
+    }
 
     await DatabaseHelper().addInternalResistance(
       batteryId: widget.batteryId,
       resistances: resistances,
     );
 
-    Navigator.of(context).pop(); // Return to the previous screen
+    Navigator.of(context).pop();
   }
 
   @override
@@ -51,7 +68,6 @@ class _AddResistanceScreenState extends State<AddResistanceScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Add Battery Resistance')),
       body: SingleChildScrollView(
-        // Wrap with SingleChildScrollView
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,6 +79,13 @@ class _AddResistanceScreenState extends State<AddResistanceScreen> {
                   labelText: 'Resistance C${i + 1} (mΩ)',
                 ),
                 keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  controllers[i].text =
+                      value.replaceAll(',', '.'); // Replace comma with dot
+                  controllers[i].selection = TextSelection.fromPosition(
+                    TextPosition(offset: controllers[i].text.length),
+                  );
+                },
               ),
             const SizedBox(height: 16),
             ElevatedButton(
