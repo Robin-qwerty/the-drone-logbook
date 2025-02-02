@@ -441,8 +441,7 @@ class _DroneDetailScreenState extends State<DroneDetailScreen>
                                         builder: (context) =>
                                             EditFlightLogScreen(
                                           logId: log['id'],
-                                          onLogUpdated:
-                                              _loadDroneData,
+                                          onLogUpdated: _loadDroneData,
                                         ),
                                       ),
                                     );
@@ -476,8 +475,7 @@ class _DroneDetailScreenState extends State<DroneDetailScreen>
                                         builder: (context) =>
                                             EditFlightLogScreen(
                                           logId: log['id'],
-                                          onLogUpdated:
-                                              _loadDroneData,
+                                          onLogUpdated: _loadDroneData,
                                         ),
                                       ),
                                     );
@@ -504,7 +502,9 @@ class _DroneDetailScreenState extends State<DroneDetailScreen>
                               title: Text(
                                   'flown ${log['usage_count']} times with a total flight time of ${log['flight_time_minutes']} minutes'),
                               subtitle: Text(
-                                  'Date: ${_formatDate(log['usage_date'])}'),
+                                'Date: ${_formatDate(log['usage_date'])}',
+                                style: const TextStyle(color: Colors.grey),
+                              ),
                             ),
                           );
                         }),

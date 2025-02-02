@@ -3,6 +3,7 @@
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../drones/drone_editusage_screen.dart';
 import 'battery_addresistance_screen.dart';
 import 'battery_addreport_screen.dart';
 import 'battery_addusage_screen.dart';
@@ -284,11 +285,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                       const TextSpan(
                         text: 'Type: ',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
                       ),
                       TextSpan(
                         text: widget.battery['type'] ?? 'Unknown',
-                        style: const TextStyle(fontSize: 16, color: Colors.black),
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
                       ),
                     ],
                   ),
@@ -301,11 +305,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                         const TextSpan(
                           text: 'Bought on: ',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black),
                         ),
                         TextSpan(
                           text: _formatDate(widget.battery['buy_date']),
-                          style: const TextStyle(fontSize: 16, color: Colors.black),
+                          style: const TextStyle(
+                              fontSize: 16, color: Colors.black),
                         ),
                       ],
                     ),
@@ -326,11 +333,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                         const TextSpan(
                           text: 'Brand: ',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black),
                         ),
                         TextSpan(
                           text: widget.battery['brand'] ?? '/',
-                          style: const TextStyle(fontSize: 16, color: Colors.black),
+                          style: const TextStyle(
+                              fontSize: 16, color: Colors.black),
                         ),
                       ],
                     ),
@@ -345,11 +355,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                         const TextSpan(
                           text: 'Description: ',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black),
                         ),
                         TextSpan(
                           text: widget.battery['description'] ?? '/',
-                          style: const TextStyle(fontSize: 16, color: Colors.black),
+                          style: const TextStyle(
+                              fontSize: 16, color: Colors.black),
                         ),
                       ],
                     ),
@@ -369,11 +382,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                       const TextSpan(
                         text: 'Capacity: ',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
                       ),
                       TextSpan(
                         text: '${widget.battery['capacity'] ?? 'unknown'}mAh',
-                        style: const TextStyle(fontSize: 16, color: Colors.black),
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
                       ),
                     ],
                   ),
@@ -384,11 +400,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                       const TextSpan(
                         text: 'Cell count: ',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
                       ),
                       TextSpan(
                         text: '${widget.battery['cell_count'] ?? 'unknown'}s',
-                        style: const TextStyle(fontSize: 16, color: Colors.black),
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
                       ),
                     ],
                   ),
@@ -406,11 +425,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                       const TextSpan(
                         text: 'Full Watt: ',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
                       ),
                       TextSpan(
                         text: '${widget.battery['full_watt'] ?? 'unknown'}W',
-                        style: const TextStyle(fontSize: 16, color: Colors.black),
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
                       ),
                     ],
                   ),
@@ -421,11 +443,14 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                       const TextSpan(
                         text: 'Storage Watt: ',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
                       ),
                       TextSpan(
                         text: '${widget.battery['storage_watt'] ?? 'unknown'}W',
-                        style: const TextStyle(fontSize: 16, color: Colors.black),
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
                       ),
                     ],
                   ),
@@ -528,6 +553,24 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                             motion: const DrawerMotion(),
                             children: [
                               SlidableAction(
+                                onPressed: (context) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EditFlightLogScreen(
+                                        logId: usage['id'],
+                                        onLogUpdated:
+                                            _loadReportsResistanceUsage,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                icon: Icons.edit,
+                                label: 'Edit',
+                              ),
+                              SlidableAction(
                                 onPressed: _isNotWrittenOff
                                     ? (context) {
                                         _confirmAndDelete(
@@ -553,6 +596,24 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                             motion: const DrawerMotion(),
                             children: [
                               SlidableAction(
+                                onPressed: (context) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EditFlightLogScreen(
+                                        logId: usage['id'],
+                                        onLogUpdated:
+                                            _loadReportsResistanceUsage,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                icon: Icons.edit,
+                                label: 'Edit',
+                              ),
+                              SlidableAction(
                                 onPressed: _isNotWrittenOff
                                     ? (context) {
                                         _confirmAndDelete(
@@ -575,7 +636,8 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                             ],
                           ),
                           child: ListTile(
-                            title: Text('Cycle Count: ${usage['usage_count']}'),
+                            title: Text(
+                                'flown ${usage['usage_count']} times with a total flight time of ${usage['flight_time_minutes']} minutes'),
                             subtitle: Text(
                               'Date: ${_formatDate(usage['usage_date'])}',
                               style: const TextStyle(color: Colors.grey),
@@ -832,19 +894,6 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                 ],
               ),
             ),
-            const Divider(),
-            const SizedBox(height: 8),
-
-            if (_isNotWrittenOff)
-              const Text(
-                'Swipe left or right to perform actions like deleting on the cycles, resistance or reports.',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
           ],
         ),
       ),

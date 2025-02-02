@@ -2,6 +2,7 @@
 
 import 'batteries/battery_list_screen.dart';
 import 'drones/drone_list_screen.dart';
+import 'inventory/inventory_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'database_helper.dart';
 import 'home_screen.dart';
@@ -112,7 +113,7 @@ class _MainScreenState extends State<MainScreen> {
         const HomeScreen(),
         if (settings['batteries_enabled'] == 1) const BatteryListScreen(),
         if (settings['drones_enabled'] == 1) const DroneListScreen(),
-        if (settings['inventory_enabled'] == 1) const InventoryScreen(),
+        if (settings['inventory_enabled'] == 1) const InventoryListScreen(),
       ];
 
       _bottomNavItems = [
@@ -177,20 +178,6 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                     ],
             ),
-    );
-  }
-}
-
-class InventoryScreen extends StatelessWidget {
-  const InventoryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Inventory list Screen (to be implemented)',
-        style: TextStyle(fontSize: 18),
-      ),
     );
   }
 }

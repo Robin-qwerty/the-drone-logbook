@@ -28,10 +28,22 @@ class _DroneAddFlightLogScreenState extends State<DroneAddFlightLogScreen> {
 
   Future<void> _loadBatteries() async {
     final batteries = await _dbHelper.getBatteries();
+
     setState(() {
       _batteries = [
         {'id': 0, 'brand': 'Other', 'number': ''},
         ...batteries
+            .where((battery) =>
+                battery['id'] != null &&
+                battery['brand'] != null &&
+                battery['number'] != null)
+            .map((battery) => {
+                  'id': battery['id'],
+                  'brand': battery['brand']
+                      .toString(),
+                  'number': battery['number']
+                      .toString(),
+                })
       ];
     });
   }
@@ -72,7 +84,7 @@ class _DroneAddFlightLogScreenState extends State<DroneAddFlightLogScreen> {
       return;
     }
 
-    await _dbHelper.insertFlightLog(
+    await _dbHelper.insertUsage(
       widget.droneId,
       _selectedBatteryId!,
       _formatDate(_usageDate),
