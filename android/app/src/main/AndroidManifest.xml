@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
-        android:label="the_drone_logbook"
+        android:label="The Drone Logbook"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

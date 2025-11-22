@@ -28,7 +28,7 @@ class DatabaseHelper {
 
     return openDatabase(
       join(dbPath, 'battery.db'),
-      version: 10,
+      version: 11,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE batteries_type (
@@ -52,7 +52,7 @@ class DatabaseHelper {
             cell_count INTEGER NOT NULL,
             capacity INTEGER NOT NULL,
             storage_watt REAL,
-            full_watt REAL,
+            full_watt REAL
           )
         ''');
 
@@ -79,8 +79,8 @@ class DatabaseHelper {
           CREATE TABLE reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             battery_id INTEGER,
-            drone_id TEXT,
-            resolved INTERGER DEFAULT 0,
+            drone_id INTEGER,
+            resolved INTEGER DEFAULT 0,
             report_text TEXT NOT NULL,
             report_date DATE DEFAULT (DATE('now'))
           )
@@ -90,7 +90,7 @@ class DatabaseHelper {
           CREATE TABLE usage (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             battery_id INTEGER,
-            drone_id TEXT,
+            drone_id INTEGER,
             flight_time_minutes INTEGER DEFAULT 0,
             usage_date DATE DEFAULT (DATE('now')),
             usage_count INTEGER NOT NULL DEFAULT 1
@@ -100,8 +100,8 @@ class DatabaseHelper {
         await db.execute('''
           CREATE TABLE settings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            firsttime INTERGER NOT NULL DEFAULT 0,
-            firsttimebattery INTERGER NOT NULL DEFAULT 0,
+            firsttime INTEGER NOT NULL DEFAULT 0,
+            firsttimebattery INTEGER NOT NULL DEFAULT 0,
             batteries_enabled INTEGER NOT NULL DEFAULT 0,
             drones_enabled INTEGER NOT NULL DEFAULT 0,
             inventory_enabled INTEGER NOT NULL DEFAULT 0
@@ -141,10 +141,118 @@ class DatabaseHelper {
         ''');
 
         await _insertDefaultData(db);
+        await _createIndexes(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        // Handle database migrations
+        if (oldVersion < 11) {
+          // Migration from version 10 to 11
+          try {
+            // Fix drone_id type in usage table
+            await db.execute('''
+              CREATE TABLE usage_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                battery_id INTEGER,
+                drone_id INTEGER,
+                flight_time_minutes INTEGER DEFAULT 0,
+                usage_date DATE DEFAULT (DATE('now')),
+                usage_count INTEGER NOT NULL DEFAULT 1
+              )
+            ''');
+            
+            // Migrate data, converting TEXT drone_id to INTEGER
+            await db.execute('''
+              INSERT INTO usage_new (id, battery_id, drone_id, flight_time_minutes, usage_date, usage_count)
+              SELECT id, battery_id, 
+                     CASE 
+                       WHEN drone_id IS NULL OR drone_id = '' THEN NULL
+                       ELSE CAST(drone_id AS INTEGER)
+                     END,
+                     CASE 
+                       WHEN flight_time_minutes IS NULL OR flight_time_minutes = '' THEN 0
+                       ELSE CAST(flight_time_minutes AS INTEGER)
+                     END,
+                     usage_date,
+                     usage_count
+              FROM usage
+            ''');
+            
+            await db.execute('DROP TABLE usage');
+            await db.execute('ALTER TABLE usage_new RENAME TO usage');
+            
+            // Fix drone_id type in reports table
+            await db.execute('''
+              CREATE TABLE reports_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                battery_id INTEGER,
+                drone_id INTEGER,
+                resolved INTEGER DEFAULT 0,
+                report_text TEXT NOT NULL,
+                report_date DATE DEFAULT (DATE('now'))
+              )
+            ''');
+            
+            await db.execute('''
+              INSERT INTO reports_new (id, battery_id, drone_id, resolved, report_text, report_date)
+              SELECT id, battery_id,
+                     CASE 
+                       WHEN drone_id IS NULL OR drone_id = '' THEN NULL
+                       ELSE CAST(drone_id AS INTEGER)
+                     END,
+                     resolved,
+                     report_text,
+                     report_date
+              FROM reports
+            ''');
+            
+            await db.execute('DROP TABLE reports');
+            await db.execute('ALTER TABLE reports_new RENAME TO reports');
+            
+            // Fix typos in settings table
+            await db.execute('''
+              CREATE TABLE settings_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                firsttime INTEGER NOT NULL DEFAULT 0,
+                firsttimebattery INTEGER NOT NULL DEFAULT 0,
+                batteries_enabled INTEGER NOT NULL DEFAULT 0,
+                drones_enabled INTEGER NOT NULL DEFAULT 0,
+                inventory_enabled INTEGER NOT NULL DEFAULT 0
+              )
+            ''');
+            
+            await db.execute('''
+              INSERT INTO settings_new (id, firsttime, firsttimebattery, batteries_enabled, drones_enabled, inventory_enabled)
+              SELECT id, firsttime, firsttimebattery, batteries_enabled, drones_enabled, inventory_enabled
+              FROM settings
+            ''');
+            
+            await db.execute('DROP TABLE settings');
+            await db.execute('ALTER TABLE settings_new RENAME TO settings');
+            
+            // Create indexes
+            await _createIndexes(db);
+          } catch (e) {
+            // If migration fails, we'll handle it gracefully
+            print('Migration error: $e');
+          }
+        }
       },
     );
   }
 
+  /// Creates database indexes for improved query performance
+  Future<void> _createIndexes(Database db) async {
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_batteries_type_id ON batteries(battery_type_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_battery_resistance_battery_id ON battery_resistance(battery_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_reports_battery_id ON reports(battery_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_reports_drone_id ON reports(drone_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_usage_battery_id ON usage(battery_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_usage_drone_id ON usage(drone_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_usage_date ON usage(usage_date)');
+  }
+
+  // Method for development use - uncomment in onCreate to reset database
+  // ignore: unused_element
   Future<void> _deleteDatabase(String path) async {
     final file = File(path);
     if (await file.exists()) {
@@ -302,8 +410,13 @@ class DatabaseHelper {
   }
 
   Future<int> insertBattery(Map<String, dynamic> battery) async {
-    final db = await database;
-    return db.insert('batteries', battery);
+    try {
+      final db = await database;
+      return await db.insert('batteries', battery);
+    } catch (e) {
+      print('Error inserting battery: $e');
+      rethrow;
+    }
   }
 
   Future<void> updateBattery(
@@ -338,30 +451,34 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> updateBatteryEndDate(int id, DateTime endDate) async {
+  Future<void> updateBatteryEndDate(int id, DateTime? endDate) async {
     final db = await database;
     await db.update(
       'batteries',
-      {'end_date': endDate.toIso8601String()},
+      {'end_date': endDate?.toIso8601String()},
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
   Future<int> deleteBattery(int id) async {
-    final db = await database;
-
-    return await db.delete(
-      'batteries',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    try {
+      final db = await database;
+      return await db.delete(
+        'batteries',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      print('Error deleting battery: $e');
+      rethrow;
+    }
   }
 
   // battery resistance
   Future<List<Map<String, dynamic>>> getAllResistances() async {
     final db = await database;
-    return await db.query('battery_resistance ');
+    return await db.query('battery_resistance');
   }
 
   Future<int> addInternalResistance({
@@ -447,6 +564,24 @@ class DatabaseHelper {
   }
 
   // battery Usage
+  Future<void> insertUsageBattery(int batteryId, int? droneId, String usageDate,
+      String flightTime, int usageCount) async {
+    try {
+      final db = await database;
+      final flightTimeInt = int.tryParse(flightTime) ?? 0;
+      await db.insert('usage', {
+        'drone_id': droneId,
+        'flight_time_minutes': flightTimeInt,
+        'battery_id': batteryId,
+        'usage_date': usageDate,
+        'usage_count': usageCount,
+      });
+    } catch (e) {
+      print('Error inserting battery usage: $e');
+      rethrow;
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getDrones() async {
     final db = await database;
     return await db.query('drones');
@@ -468,7 +603,7 @@ class DatabaseHelper {
   }
 
   //drones
-  Future<List<Map<String, dynamic>>> getAllDrones1() async {
+  Future<List<Map<String, dynamic>>> getAllDronesWithStats() async {
     final db = await database;
     return db.rawQuery('''
       SELECT d.*, 
@@ -575,16 +710,22 @@ class DatabaseHelper {
     ''', [droneId]);
   }
 
-  Future<void> insertUsage(int droneId, int batteryId, String usageDate,
+  Future<void> insertUsageDrone(int droneId, int? batteryId, String usageDate,
       String flightTime, int usageCount) async {
-    final db = await database;
-    await db.insert('usage', {
-      'drone_id': droneId,
-      'flight_time_minutes': flightTime,
-      'battery_id': batteryId,
-      'usage_date': usageDate,
-      'usage_count': usageCount,
-    });
+    try {
+      final db = await database;
+      final flightTimeInt = int.tryParse(flightTime) ?? 0;
+      await db.insert('usage', {
+        'drone_id': droneId,
+        'flight_time_minutes': flightTimeInt,
+        'battery_id': batteryId,
+        'usage_date': usageDate,
+        'usage_count': usageCount,
+      });
+    } catch (e) {
+      print('Error inserting drone usage: $e');
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> getBatteries() async {

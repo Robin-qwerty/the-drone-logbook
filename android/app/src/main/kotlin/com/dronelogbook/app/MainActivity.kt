@@ -1,5 +1,6 @@
-package com.example.the_drone_logbook
+package com.dronelogbook.app
 
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity: FlutterActivity()
+

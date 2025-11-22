@@ -76,68 +76,138 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add a Battery')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _numberController,
-                  decoration: const InputDecoration(
-                      labelText: 'Number/name for the battery*'),
-                  validator: (value) => value == null || value.isEmpty
-                      ? 'Number is required'
-                      : null,
+      appBar: AppBar(
+        title: const Text('Add a Battery'),
+        elevation: 0,
+      ),
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                TextFormField(
-                  controller: _brandController,
-                  decoration: const InputDecoration(labelText: 'Brand'),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _numberController,
+                        decoration: InputDecoration(
+                          labelText: 'Number/name for the battery*',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          prefixIcon: const Icon(Icons.label),
+                        ),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Number is required'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _brandController,
+                        decoration: InputDecoration(
+                          labelText: 'Brand',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          prefixIcon: const Icon(Icons.business),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _descriptionController,
+                        decoration: InputDecoration(
+                          labelText: 'Description',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          prefixIcon: const Icon(Icons.description),
+                        ),
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
                 ),
-                TextField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                DropdownButtonFormField<int>(
-                  value: _selectedBatteryTypeId,
-                  decoration: const InputDecoration(labelText: 'Battery Type*'),
-                  items: _batteryTypes.map((type) {
-                    return DropdownMenuItem<int>(
-                      value: type['id'],
-                      child: Text(type['type']),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedBatteryTypeId = value;
-                    });
-                  },
-                  validator: (value) =>
-                      value == null ? 'Type is required' : null,
-                ),
-                TextFormField(
-                  controller: _cellCountController,
-                  decoration: const InputDecoration(labelText: 'Cell Count*'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => value == null || value.isEmpty
-                      ? 'Cell Count is required'
-                      : null,
-                ),
-                TextFormField(
-                  controller: _capacityController,
-                  decoration:
-                      const InputDecoration(labelText: 'Capacity (mAh)*'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => value == null || value.isEmpty
-                      ? 'Capacity is required'
-                      : null,
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      DropdownButtonFormField<int>(
+                        value: _selectedBatteryTypeId,
+                        decoration: InputDecoration(
+                          labelText: 'Battery Type*',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          prefixIcon: const Icon(Icons.battery_charging_full),
+                        ),
+                        items: _batteryTypes.map((type) {
+                          return DropdownMenuItem<int>(
+                            value: type['id'],
+                            child: Text(type['type']),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedBatteryTypeId = value;
+                          });
+                        },
+                        validator: (value) =>
+                            value == null ? 'Type is required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _cellCountController,
+                              decoration: InputDecoration(
+                                labelText: 'Cell Count*',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                prefixIcon: const Icon(Icons.layers),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) => value == null || value.isEmpty
+                                  ? 'Cell Count is required'
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _capacityController,
+                              decoration: InputDecoration(
+                                labelText: 'Capacity (mAh)*',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                prefixIcon: const Icon(Icons.battery_std),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) => value == null || value.isEmpty
+                                  ? 'Capacity is required'
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
                         onPressed: () async {
                           final selectedDate = await showDatePicker(
                             context: context,
@@ -149,21 +219,37 @@ class _BatteryFormScreenState extends State<BatteryFormScreen> {
                             _buyDate = selectedDate;
                           });
                         },
-                        child: Text(_buyDate == null
+                        icon: const Icon(Icons.calendar_today),
+                        label: Text(_buyDate == null
                             ? 'Select Buy Date'
                             : 'Buy Date: ${_buyDate.toString().split(' ')[0]}'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                ElevatedButton(
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
                   onPressed: _addBattery,
-                  child: const Text('Add Battery'),
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text(
+                    'Add Battery',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

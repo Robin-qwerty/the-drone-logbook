@@ -151,9 +151,6 @@ class _MainScreenState extends State<MainScreen> {
     bool allSettingsDisabled = _settings.values.every((value) => value == 0);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('The Drone Logbook'),
-      ),
       body: allSettingsDisabled
           ? const HomeScreen()
           : (_screens.isNotEmpty
@@ -171,10 +168,6 @@ class _MainScreenState extends State<MainScreen> {
                       const BottomNavigationBarItem(
                         icon: Icon(Icons.home),
                         label: 'Home',
-                      ),
-                      const BottomNavigationBarItem(
-                        icon: Icon(Icons.settings),
-                        label: 'Settings',
                       ),
                     ],
             ),

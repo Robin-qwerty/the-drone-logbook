@@ -23,7 +23,7 @@ class _DroneListScreenState extends State<DroneListScreen> {
   }
 
   Future<void> _loadDrones() async {
-    final drones = await _dbHelper.getAllDrones1();
+    final drones = await _dbHelper.getAllDronesWithStats();
     setState(() {
       _drones = drones;
     });

@@ -76,7 +76,7 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
       return;
     }
 
-    await _dbHelper.insertUsage(
+    await _dbHelper.insertUsageBattery(
       widget.batteryId,
       _selectedDroneId!,
       _formatDate(_usageDate),
@@ -113,7 +113,9 @@ class _BatteryAddUsageScreenState extends State<BatteryAddUsageScreen> {
               items: _drones.map((drone) {
                 return DropdownMenuItem<int>(
                   value: drone['id'],
-                  child: Text(drone['id'] == 0 ? 'Other' : drone['name']),
+                  child: Text(drone['id'] == 0
+                    ? 'Other'
+                    : '${drone['id']} - ${drone['name']}'),
                 );
               }).toList(),
             ),

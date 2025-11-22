@@ -3,7 +3,7 @@
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../drones/drone_editusage_screen.dart';
+import 'battery_editusage_screen.dart';
 import 'battery_addresistance_screen.dart';
 import 'battery_addreport_screen.dart';
 import 'battery_addusage_screen.dart';
@@ -61,38 +61,70 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
     });
   }
 
-  Future<void> _writeOffBattery() async {
-    final confirmation = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Write Off this Battery'),
-          content: const Text(
-              'You can write off batteries if they are not usable anymore or if you lost them.\n\n Are you sure you want to write off this battery?\n If you write off a battery you can\'t edit the battery anymore.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Confirm'),
-            ),
-          ],
-        );
-      },
-    );
+  // Write off methods commented out - needs app reload to take effect properly
+  // Future<void> _writeOffBattery() async {
+  //   final confirmation = await showDialog<bool>(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: const Text('Write Off this Battery'),
+  //         content: const Text(
+  //             'You can write off batteries if they are not usable anymore or if you lost them.\n\n Are you sure you want to write off this battery?\n If you write off a battery you can\'t edit the battery anymore.'),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(false),
+  //             child: const Text('Cancel'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(true),
+  //             child: const Text('Confirm'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
 
-    if (confirmation == true) {
-      final currentDate = DateTime.now();
+  //   if (confirmation == true) {
+  //     final currentDate = DateTime.now();
 
-      await _dbHelper.updateBatteryEndDate(widget.battery['id'], currentDate);
-      await _loadReportsResistanceUsage();
+  //     await _dbHelper.updateBatteryEndDate(widget.battery['id'], currentDate);
+  //     await _loadReportsResistanceUsage();
 
-      _showSnackbar('Battery has been written off successfully!');
-      Navigator.pop(context, true);
-    }
-  }
+  //     _showSnackbar('Battery has been written off successfully!');
+  //     Navigator.pop(context, true);
+  //   }
+  // }
+
+  // Future<void> _unwriteOffBattery() async {
+  //   final confirmation = await showDialog<bool>(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: const Text('Unwrite Off this Battery'),
+  //         content: const Text(
+  //             'Are you sure you want to unwrite off this battery?\n\nThis will allow you to edit the battery again.'),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(false),
+  //             child: const Text('Cancel'),
+  //           ),
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(true),
+  //             child: const Text('Confirm'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+
+  //   if (confirmation == true) {
+  //     await _dbHelper.updateBatteryEndDate(widget.battery['id'], null);
+  //     await _loadReportsResistanceUsage();
+
+  //     _showSnackbar('Battery has been unwritten off successfully!');
+  //     Navigator.pop(context, true);
+  //   }
+  // }
 
   String _formatDate(String? date) {
     if (date == null) return 'N/A';
@@ -209,252 +241,124 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Battery Details')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '(${widget.battery['id']})',
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                if (_isNotWrittenOff)
-                  ElevatedButton(
-                    onPressed: _writeOffBattery,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 215, 88, 78),
-                      foregroundColor: Colors.black,
-                    ),
-                    child: const Text('Write Off'),
-                  ),
-              ],
-            ),
-            const Divider(),
-
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth < 400) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Name/Number: ${widget.battery['number'] ?? 'Unknown'}',
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Total cycles: ${widget.battery['total_usage_count'] ?? 0}',
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  );
-                } else {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Name/Number: ${widget.battery['number'] ?? 'Unknown'}',
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        'Total cycles: ${widget.battery['total_usage_count'] ?? 0}',
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: 'Type: ',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black),
-                      ),
-                      TextSpan(
-                        text: widget.battery['type'] ?? 'Unknown',
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.black),
-                      ),
-                    ],
-                  ),
-                ),
-                if (widget.battery['buy_date'] != null ||
-                    widget.battery['buy_date'].isEmpty)
-                  RichText(
-                    text: TextSpan(
+      appBar: AppBar(
+        title: const Text('Battery Details'),
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
                       children: [
-                        const TextSpan(
-                          text: 'Bought on: ',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _isNotWrittenOff
+                                ? Colors.green.shade50
+                                : Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.battery_full,
+                            color: _isNotWrittenOff
+                                ? Colors.green
+                                : Colors.grey,
+                            size: 32,
+                          ),
                         ),
-                        TextSpan(
-                          text: _formatDate(widget.battery['buy_date']),
-                          style: const TextStyle(
-                              fontSize: 16, color: Colors.black),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Battery #${widget.battery['id']}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              widget.battery['number'] ?? 'Unknown',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ),
-              ],
+                    // Write off button commented out - needs app reload to take effect
+                    // if (_isNotWrittenOff)
+                    //   ElevatedButton.icon(
+                    //     onPressed: _writeOffBattery,
+                    //     style: ElevatedButton.styleFrom(
+                    //       backgroundColor: Colors.red.shade50,
+                    //       foregroundColor: Colors.red.shade700,
+                    //       elevation: 0,
+                    //     ),
+                    //     icon: const Icon(Icons.block, size: 18),
+                    //     label: const Text('Write Off'),
+                    //   )
+                    // else
+                    //   ElevatedButton.icon(
+                    //     onPressed: _unwriteOffBattery,
+                    //     style: ElevatedButton.styleFrom(
+                    //       backgroundColor: Colors.green.shade50,
+                    //       foregroundColor: Colors.green.shade700,
+                    //       elevation: 0,
+                    //     ),
+                    //     icon: const Icon(Icons.restore, size: 18),
+                    //     label: const Text('Unwrite Off'),
+                    //   ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-
-// Other Details
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(height: 12),
+            
+            // Compact battery info
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
               children: [
-                Flexible(
-                  flex: 1,
-                  child: RichText(
-                    text: TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: 'Brand: ',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black),
-                        ),
-                        TextSpan(
-                          text: widget.battery['brand'] ?? '/',
-                          style: const TextStyle(
-                              fontSize: 16, color: Colors.black),
-                        ),
-                      ],
-                    ),
-                  ),
+                _InfoChip(
+                  label: 'Type',
+                  value: widget.battery['type'] ?? 'Unknown',
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  flex: 2,
-                  child: RichText(
-                    text: TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: 'Description: ',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black),
-                        ),
-                        TextSpan(
-                          text: widget.battery['description'] ?? '/',
-                          style: const TextStyle(
-                              fontSize: 16, color: Colors.black),
-                        ),
-                      ],
-                    ),
-                  ),
+                _InfoChip(
+                  label: 'Capacity',
+                  value: '${widget.battery['capacity'] ?? 'unknown'} mAh',
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: 'Capacity: ',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black),
-                      ),
-                      TextSpan(
-                        text: '${widget.battery['capacity'] ?? 'unknown'}mAh',
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.black),
-                      ),
-                    ],
-                  ),
+                _InfoChip(
+                  label: 'Cells',
+                  value: '${widget.battery['cell_count'] ?? 'unknown'}s',
                 ),
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: 'Cell count: ',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black),
-                      ),
-                      TextSpan(
-                        text: '${widget.battery['cell_count'] ?? 'unknown'}s',
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.black),
-                      ),
-                    ],
-                  ),
+                _InfoChip(
+                  label: 'Cycles',
+                  value: '${widget.battery['total_usage_count'] ?? 0}',
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: 'Full Watt: ',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black),
-                      ),
-                      TextSpan(
-                        text: '${widget.battery['full_watt'] ?? 'unknown'}W',
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.black),
-                      ),
-                    ],
+                if (widget.battery['buy_date'] != null &&
+                    widget.battery['buy_date'].toString().isNotEmpty)
+                  _InfoChip(
+                    label: 'Bought',
+                    value: _formatDate(widget.battery['buy_date']),
                   ),
-                ),
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      const TextSpan(
-                        text: 'Storage Watt: ',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black),
-                      ),
-                      TextSpan(
-                        text: '${widget.battery['storage_watt'] ?? 'unknown'}W',
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.black),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -524,137 +428,195 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                 'This battery has been written off.',
                 style: TextStyle(fontSize: 16, color: Colors.red),
               ),
-            const SizedBox(height: 16),
-            const Divider(),
-
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'Cycles'),
-                Tab(text: 'Resistances'),
-                Tab(text: 'Reports'),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-
-            SizedBox(
-              height: 500,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Usage Section
-                  Column(children: [
-                    if (_usage.isEmpty)
-                      const Text('No cycles records available.')
-                    else
-                      ..._usage.map((usage) {
-                        return Slidable(
-                          startActionPane: ActionPane(
-                            motion: const DrawerMotion(),
-                            children: [
-                              SlidableAction(
-                                onPressed: (context) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EditFlightLogScreen(
-                                        logId: usage['id'],
-                                        onLogUpdated:
-                                            _loadReportsResistanceUsage,
+          ),
+          TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'Cycles'),
+              Tab(text: 'Resistances'),
+              Tab(text: 'Reports'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Usage Section
+                _usage.isEmpty
+                    ? const Center(child: Text('No cycles records available.'))
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: _usage.length,
+                              itemBuilder: (context, index) {
+                          final usage = _usage[index];
+                          return Slidable(
+                            startActionPane: ActionPane(
+                              motion: const DrawerMotion(),
+                              children: [
+                                SlidableAction(
+                                  onPressed: (context) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            BatteryEditUsageScreen(
+                                          usageId: usage['id'],
+                                          onUsageUpdated:
+                                              _loadReportsResistanceUsage,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                icon: Icons.edit,
-                                label: 'Edit',
-                              ),
-                              SlidableAction(
-                                onPressed: _isNotWrittenOff
-                                    ? (context) {
-                                        _confirmAndDelete(
-                                          context,
-                                          'Are you sure you want to delete this usage record?',
-                                          () async {
-                                            await _dbHelper
-                                                .deleteUsage(usage['id']);
-                                            await _loadReportsResistanceUsage();
-                                            _showSnackbar(
-                                                'Usage deleted successfully!');
-                                          },
-                                        );
-                                      }
-                                    : null,
-                                backgroundColor: Colors.red,
-                                icon: Icons.delete,
-                                label: 'Delete',
-                              ),
-                            ],
-                          ),
-                          endActionPane: ActionPane(
-                            motion: const DrawerMotion(),
-                            children: [
-                              SlidableAction(
-                                onPressed: (context) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EditFlightLogScreen(
-                                        logId: usage['id'],
-                                        onLogUpdated:
-                                            _loadReportsResistanceUsage,
+                                    );
+                                  },
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  icon: Icons.edit,
+                                  label: 'Edit',
+                                ),
+                                SlidableAction(
+                                  onPressed: _isNotWrittenOff
+                                      ? (context) {
+                                          _confirmAndDelete(
+                                            context,
+                                            'Are you sure you want to delete this usage record?',
+                                            () async {
+                                              await _dbHelper
+                                                  .deleteUsage(usage['id']);
+                                              await _loadReportsResistanceUsage();
+                                              _showSnackbar(
+                                                  'Usage deleted successfully!');
+                                            },
+                                          );
+                                        }
+                                      : null,
+                                  backgroundColor: Colors.red,
+                                  icon: Icons.delete,
+                                  label: 'Delete',
+                                ),
+                              ],
+                            ),
+                            endActionPane: ActionPane(
+                              motion: const DrawerMotion(),
+                              children: [
+                                SlidableAction(
+                                  onPressed: (context) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            BatteryEditUsageScreen(
+                                          usageId: usage['id'],
+                                          onUsageUpdated:
+                                              _loadReportsResistanceUsage,
+                                        ),
                                       ),
+                                    );
+                                  },
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  icon: Icons.edit,
+                                  label: 'Edit',
+                                ),
+                                SlidableAction(
+                                  onPressed: _isNotWrittenOff
+                                      ? (context) {
+                                          _confirmAndDelete(
+                                            context,
+                                            'Are you sure you want to delete this usage record?',
+                                            () async {
+                                              await _dbHelper
+                                                  .deleteUsage(usage['id']);
+                                              await _loadReportsResistanceUsage();
+                                              _showSnackbar(
+                                                  'Usage deleted successfully!');
+                                            },
+                                          );
+                                        }
+                                      : null,
+                                  backgroundColor: Colors.red,
+                                  icon: Icons.delete,
+                                  label: 'Delete',
+                                ),
+                              ],
+                            ),
+                            child: Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.flight_takeoff,
+                                    color: Colors.blue.shade700,
+                                    size: 24,
+                                  ),
+                                ),
+                                title: Text(
+                                  '${usage['usage_count']} cycle${usage['usage_count'] == 1 ? '' : 's'} • ${usage['flight_time_minutes']} min',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    _formatDate(usage['usage_date']),
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 13,
                                     ),
-                                  );
-                                },
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                icon: Icons.edit,
-                                label: 'Edit',
+                                  ),
+                                ),
                               ),
-                              SlidableAction(
-                                onPressed: _isNotWrittenOff
-                                    ? (context) {
-                                        _confirmAndDelete(
-                                          context,
-                                          'Are you sure you want to delete this usage record?',
-                                          () async {
-                                            await _dbHelper
-                                                .deleteUsage(usage['id']);
-                                            await _loadReportsResistanceUsage();
-                                            _showSnackbar(
-                                                'Usage deleted successfully!');
-                                          },
-                                        );
-                                      }
-                                    : null,
-                                backgroundColor: Colors.red,
-                                icon: Icons.delete,
-                                label: 'Delete',
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            title: Text(
-                                'flown ${usage['usage_count']} times with a total flight time of ${usage['flight_time_minutes']} minutes'),
-                            subtitle: Text(
-                              'Date: ${_formatDate(usage['usage_date'])}',
-                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          );
+                              },
                             ),
                           ),
-                        );
-                      }),
-                  ]),
-
+                          Container(
+                            padding: const EdgeInsets.all(12.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              border: Border(
+                                top: BorderSide(color: Colors.grey.shade200),
+                              ),
+                            ),
+                            child: Text(
+                              'Swipe left or right on an item to edit or delete.',
+                              style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
                   // Resistances Section
-                  Column(
-                    children: [
-                      if (_resistances.isEmpty)
-                        const Text('No resistances records available.')
-                      else
-                        ..._resistances.map(
-                          (resistance) {
+                  _resistances.isEmpty
+                      ? const Center(child: Text('No resistances records available.'))
+                      : Column(
+                          children: [
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: _resistances.length,
+                                itemBuilder: (context, index) {
+                            final resistance = _resistances[index];
                             return Slidable(
                               startActionPane: ActionPane(
                                 motion: const DrawerMotion(),
@@ -708,53 +670,117 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                                   ),
                                 ],
                               ),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Wrap(
-                                      spacing: 16.0,
-                                      runSpacing: 8.0,
-                                      children: [
-                                        for (int i = 1;
-                                            i <= widget.battery['cell_count'];
-                                            i++)
-                                          if (resistance['resistance_c$i'] !=
-                                              null)
-                                            Text(
-                                              'C$i: ${resistance['resistance_c$i']}mΩ',
-                                              style:
-                                                  const TextStyle(fontSize: 16),
+                              child: Card(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                elevation: 1,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.orange.shade50,
+                                              borderRadius: BorderRadius.circular(6),
                                             ),
-                                      ],
-                                    ),
-                                    Text(
-                                      'Date: ${_formatDate(resistance['date'])}',
-                                      style:
-                                          const TextStyle(color: Colors.grey),
-                                    ),
-                                  ],
+                                            child: Icon(
+                                              Icons.electrical_services,
+                                              color: Colors.orange.shade700,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Wrap(
+                                              spacing: 12.0,
+                                              runSpacing: 8.0,
+                                              children: [
+                                                for (int i = 1;
+                                                    i <= widget.battery['cell_count'];
+                                                    i++)
+                                                  if (resistance['resistance_c$i'] !=
+                                                      null)
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.grey.shade100,
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        'C$i: ${resistance['resistance_c$i']}mΩ',
+                                                        style: const TextStyle(
+                                                          fontSize: 13,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _formatDate(resistance['date']),
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             );
-                          },
+                                },
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(12.0),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                border: Border(
+                                  top: BorderSide(color: Colors.grey.shade200),
+                                ),
+                              ),
+                              child: Text(
+                                'Swipe left or right on an item to delete.',
+                                style: TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
                         ),
-                    ],
-                  ),
-
                   // Reports Section
-                  Column(
-                    children: [
-                      if (_reports.isEmpty)
-                        const Text('No reports available.')
-                      else
-                        ..._reports.map((report) {
-                          final bool isResolved = report['resolved'] == 1;
+                  _reports.isEmpty
+                      ? const Center(child: Text('No reports available.'))
+                      : Column(
+                          children: [
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: _reports.length,
+                                itemBuilder: (context, index) {
+                            final report = _reports[index];
+                            final bool isResolved = report['resolved'] == 1;
 
-                          return Slidable(
-                            startActionPane: ActionPane(
+                            return Slidable(
+                              startActionPane: ActionPane(
                               motion: const DrawerMotion(),
                               children: [
                                 SlidableAction(
@@ -876,24 +902,140 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
                                   ),
                               ],
                             ),
-                            child: ListTile(
-                              title: Text(report['report_text']),
-                              subtitle: Text(
-                                'Date: ${_formatDate(report['report_date'])}',
-                                style: const TextStyle(color: Colors.grey),
+                            child: Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
                               ),
-                              trailing: isResolved
-                                  ? const Icon(Icons.check_outlined,
-                                      color: Colors.green)
-                                  : null,
+                              elevation: 1,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isResolved
+                                        ? Colors.green.shade50
+                                        : Colors.red.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    isResolved
+                                        ? Icons.check_circle
+                                        : Icons.warning,
+                                    color: isResolved
+                                        ? Colors.green.shade700
+                                        : Colors.red.shade700,
+                                    size: 24,
+                                  ),
+                                ),
+                                title: Text(
+                                  report['report_text'],
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    decoration: isResolved
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                    color: isResolved
+                                        ? Colors.grey.shade600
+                                        : null,
+                                  ),
+                                ),
+                                subtitle: Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    _formatDate(report['report_date']),
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                trailing: isResolved
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          'Resolved',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.green.shade700,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                              ),
                             ),
                           );
-                        }),
-                    ],
-                  ),
+                                },
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(12.0),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                border: Border(
+                                  top: BorderSide(color: Colors.grey.shade200),
+                                ),
+                              ),
+                              child: Text(
+                                'Swipe left or right on an item to edit, delete, or resolve.',
+                                style: TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoChip({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey.shade800,
+          ),
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            TextSpan(text: value),
           ],
         ),
       ),

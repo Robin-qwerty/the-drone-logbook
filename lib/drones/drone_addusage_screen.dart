@@ -39,10 +39,8 @@ class _DroneAddFlightLogScreenState extends State<DroneAddFlightLogScreen> {
                 battery['number'] != null)
             .map((battery) => {
                   'id': battery['id'],
-                  'brand': battery['brand']
-                      .toString(),
-                  'number': battery['number']
-                      .toString(),
+                  'brand': battery['brand'].toString(),
+                  'number': battery['number'].toString(),
                 })
       ];
     });
@@ -84,7 +82,7 @@ class _DroneAddFlightLogScreenState extends State<DroneAddFlightLogScreen> {
       return;
     }
 
-    await _dbHelper.insertUsage(
+    await _dbHelper.insertUsageDrone(
       widget.droneId,
       _selectedBatteryId!,
       _formatDate(_usageDate),
