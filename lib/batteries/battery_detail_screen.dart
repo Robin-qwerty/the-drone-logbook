@@ -8,6 +8,7 @@ import 'battery_addresistance_screen.dart';
 import 'battery_addreport_screen.dart';
 import 'battery_addusage_screen.dart';
 import '../database_helper.dart';
+import 'battery_barcode_view_screen.dart';
 
 class BatteryDetailScreen extends StatefulWidget {
   final Map<String, dynamic> battery;
@@ -180,6 +181,25 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
         _showSnackbar('cycle/Usage added successfully!');
       }
     });
+  }
+
+  void _viewBarcode() {
+    final barcodeId = widget.battery['barcode_id']?.toString();
+    if (barcodeId == null || barcodeId.isEmpty) {
+      _showSnackbar('No barcode assigned to this battery yet.');
+      return;
+    }
+    final title =
+        widget.battery['number']?.toString() ?? 'Battery ${widget.battery['id']}';
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BatteryBarcodeViewScreen(
+          barcodeId: barcodeId,
+          title: title,
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmAndDelete(BuildContext context, String message,
@@ -362,6 +382,13 @@ class _BatteryDetailScreenState extends State<BatteryDetailScreen>
               ],
             ),
             const SizedBox(height: 8),
+
+            OutlinedButton.icon(
+              onPressed: _viewBarcode,
+              icon: const Icon(Icons.qr_code_2),
+              label: const Text('View Barcode'),
+            ),
+            const SizedBox(height: 12),
 
             const Divider(),
             const SizedBox(height: 8),

@@ -38,14 +38,18 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   intl: ^0.20.1
-  flutter_slidable: ^3.1.2
+  flutter_slidable: ^4.0.3
   pdf: ^3.11.1
   path_provider: ^2.1.5
   csv: ^6.0.0
-  share_plus: ^10.1.4
+  share_plus: ^12.0.1
   external_path: ^2.0.1
-  permission_handler: ^11.3.1
+  permission_handler: ^12.0.1
   url_launcher: ^6.3.1
+  barcode_widget: ^2.0.2
+  mobile_scanner: ^6.0.11
+  gal: ^2.3.2
+  screenshot: ^3.0.0
   
 dev_dependencies:
   flutter_test:
@@ -56,7 +60,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

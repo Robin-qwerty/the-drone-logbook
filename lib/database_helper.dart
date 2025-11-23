@@ -28,7 +28,7 @@ class DatabaseHelper {
 
     return openDatabase(
       join(dbPath, 'battery.db'),
-      version: 11,
+      version: 12,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE batteries_type (
@@ -52,7 +52,8 @@ class DatabaseHelper {
             cell_count INTEGER NOT NULL,
             capacity INTEGER NOT NULL,
             storage_watt REAL,
-            full_watt REAL
+            full_watt REAL,
+            barcode_id TEXT
           )
         ''');
 
@@ -104,7 +105,8 @@ class DatabaseHelper {
             firsttimebattery INTEGER NOT NULL DEFAULT 0,
             batteries_enabled INTEGER NOT NULL DEFAULT 0,
             drones_enabled INTEGER NOT NULL DEFAULT 0,
-            inventory_enabled INTEGER NOT NULL DEFAULT 0
+            inventory_enabled INTEGER NOT NULL DEFAULT 0,
+            user_id TEXT
           )
         ''');
 
@@ -145,6 +147,62 @@ class DatabaseHelper {
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         // Handle database migrations
+        if (oldVersion < 12) {
+          // Migration from version 11 to 12 - Add barcode support
+          try {
+            // Add user_id to settings if it doesn't exist
+            try {
+              await db.execute('ALTER TABLE settings ADD COLUMN user_id TEXT');
+            } catch (e) {
+              // Column might already exist, ignore
+              print('user_id column might already exist: $e');
+            }
+            
+            // Add barcode_id to batteries if it doesn't exist
+            try {
+              await db.execute('ALTER TABLE batteries ADD COLUMN barcode_id TEXT');
+            } catch (e) {
+              // Column might already exist, ignore
+              print('barcode_id column might already exist: $e');
+            }
+            
+            // Generate user_id if it doesn't exist
+            final settings = await db.query('settings', limit: 1);
+            if (settings.isNotEmpty && (settings[0]['user_id'] == null || settings[0]['user_id'].toString().isEmpty)) {
+              final userId = _generateUserId();
+              await db.update(
+                'settings',
+                {'user_id': userId},
+                where: 'id = ?',
+                whereArgs: [settings[0]['id']],
+              );
+            }
+            
+            // Generate barcode_id for existing batteries
+            final batteries = await db.query('batteries');
+            final settingsAfter = await db.query('settings', limit: 1);
+            if (settingsAfter.isNotEmpty && batteries.isNotEmpty) {
+              final userId = settingsAfter[0]['user_id']?.toString() ?? _generateUserId();
+              for (var battery in batteries) {
+                if (battery['barcode_id'] == null || battery['barcode_id'].toString().isEmpty) {
+                  final batteryId = battery['id'] as int;
+                  final barcodeId = _generateBarcodeId(userId, batteryId);
+                  await db.update(
+                    'batteries',
+                    {'barcode_id': barcodeId},
+                    where: 'id = ?',
+                    whereArgs: [batteryId],
+                  );
+                }
+              }
+            }
+            
+            // Create index for barcode_id
+            await db.execute('CREATE INDEX IF NOT EXISTS idx_batteries_barcode_id ON batteries(barcode_id)');
+          } catch (e) {
+            print('Migration error (v11 to v12): $e');
+          }
+        }
         if (oldVersion < 11) {
           // Migration from version 10 to 11
           try {
@@ -249,6 +307,26 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX IF NOT EXISTS idx_usage_battery_id ON usage(battery_id)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_usage_drone_id ON usage(drone_id)');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_usage_date ON usage(usage_date)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_batteries_barcode_id ON batteries(barcode_id)');
+  }
+
+  /// Generates a random user ID (4-5 characters)
+  String _generateUserId() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = DateTime.now().millisecondsSinceEpoch;
+    final length = 4 + (random % 2); // 4 or 5 characters
+    final buffer = StringBuffer();
+    for (int i = 0; i < length; i++) {
+      buffer.write(chars[(random + i) % chars.length]);
+    }
+    return buffer.toString();
+  }
+
+  /// Generates a barcode ID from user ID and battery ID
+  /// Format: user_id (4-5 chars) + battery_id (3 chars, zero-padded)
+  String _generateBarcodeId(String userId, int batteryId) {
+    final batteryIdStr = batteryId.toString().padLeft(3, '0');
+    return '$userId$batteryIdStr';
   }
 
   // Method for development use - uncomment in onCreate to reset database
@@ -294,12 +372,14 @@ class DatabaseHelper {
     }
 
     // Default settings
+    final userId = _generateUserId();
     await db.insert('settings', {
       'firsttime': 1,
       'firsttimebattery': 1,
       'batteries_enabled': 1,
       'drones_enabled': 0,
       'inventory_enabled': 0,
+      'user_id': userId,
     });
   }
 
@@ -330,6 +410,73 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [1],
     );
+  }
+
+  // User ID and Barcode operations
+  Future<String> getUserId() async {
+    final db = await database;
+    final settings = await db.query('settings', limit: 1);
+    if (settings.isNotEmpty && settings[0]['user_id'] != null) {
+      return settings[0]['user_id'].toString();
+    }
+    // Generate and save new user ID if it doesn't exist
+    final userId = _generateUserId();
+    await db.update(
+      'settings',
+      {'user_id': userId},
+      where: 'id = ?',
+      whereArgs: [1],
+    );
+    return userId;
+  }
+
+  Future<void> setUserId(String userId) async {
+    final db = await database;
+    await db.update(
+      'settings',
+      {'user_id': userId},
+      where: 'id = ?',
+      whereArgs: [1],
+    );
+  }
+
+  Future<Map<String, dynamic>?> getBatteryByBarcodeId(String barcodeId) async {
+    final db = await database;
+    final results = await db.query(
+      'batteries',
+      where: 'barcode_id = ?',
+      whereArgs: [barcodeId],
+    );
+    if (results.isEmpty) {
+      return null;
+    }
+    // Get battery with type info
+    final battery = Map<String, dynamic>.from(results.first);
+    final batteryTypes = await db.query(
+      'batteries_type',
+      where: 'id = ?',
+      whereArgs: [battery['battery_type_id']],
+    );
+    if (batteryTypes.isNotEmpty) {
+      battery['type'] = batteryTypes.first['type'];
+    }
+    // Get total usage count
+    final usage = await db.rawQuery(
+      'SELECT SUM(usage_count) as total FROM usage WHERE battery_id = ?',
+      [battery['id']],
+    );
+    battery['total_usage_count'] = usage.first['total'] ?? 0;
+    return battery;
+  }
+
+  /// Parses a barcode ID to extract the battery ID
+  /// Returns null if the barcode ID format is invalid
+  int? parseBatteryIdFromBarcode(String barcodeId, String userId) {
+    if (!barcodeId.startsWith(userId)) {
+      return null;
+    }
+    final batteryIdStr = barcodeId.substring(userId.length);
+    return int.tryParse(batteryIdStr);
   }
 
   Future<Map<String, List<Map<String, dynamic>>>> getAllData() async {
@@ -412,7 +559,21 @@ class DatabaseHelper {
   Future<int> insertBattery(Map<String, dynamic> battery) async {
     try {
       final db = await database;
-      return await db.insert('batteries', battery);
+      // Generate barcode_id if not provided
+      if (battery['barcode_id'] == null || battery['barcode_id'].toString().isEmpty) {
+        final userId = await getUserId();
+        final batteryId = await db.insert('batteries', battery);
+        final barcodeId = _generateBarcodeId(userId, batteryId);
+        await db.update(
+          'batteries',
+          {'barcode_id': barcodeId},
+          where: 'id = ?',
+          whereArgs: [batteryId],
+        );
+        return batteryId;
+      }
+      final batteryId = await db.insert('batteries', battery);
+      return batteryId;
     } catch (e) {
       print('Error inserting battery: $e');
       rethrow;

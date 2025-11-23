@@ -4,6 +4,8 @@ import '../database_helper.dart';
 import 'battery_detail_screen.dart';
 import 'battery_add_screen.dart';
 import 'battery_edit_screen.dart';
+import 'battery_barcode_scan_screen.dart';
+import 'battery_barcode_generate_screen.dart';
 
 class BatteryListScreen extends StatefulWidget {
   const BatteryListScreen({super.key});
@@ -81,6 +83,32 @@ class _BatteryListScreenState extends State<BatteryListScreen> {
       appBar: AppBar(
         title: const Text('Your Batteries'),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Scan Barcode',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BatteryBarcodeScanScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.qr_code),
+            tooltip: 'Generate Barcodes',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BatteryBarcodeGenerateScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: _batteries.isEmpty
           ? Center(
